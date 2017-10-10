@@ -2,9 +2,6 @@ import logging
 import numpy as np
 import pandas as pd
 
-logging.basicConfig(
-    format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-    level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

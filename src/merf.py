@@ -42,7 +42,7 @@ class Merf(object):
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Initialization ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         n_clusters = clusters.nunique()
-        n_samples = len(y)
+        n_obs = len(y)
         q = Z.shape[1]  # random effects dimension
         # p = X.shape[1]  # fixed effects dimension
 
@@ -83,6 +83,9 @@ class Merf(object):
 
         while iteration < self.max_iterations:
             iteration += 1
+            logger.debug("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            logger.debug("Iteration: {}".format(iteration))
+            logger.debug("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ E-step ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # fill up y_star for all clusters
@@ -103,7 +106,7 @@ class Merf(object):
             assert(len(y_star.shape) == 1)
 
             # Do the random forest regression with all the fixed effects features
-            rf = RandomForestRegressor(n_estimators=self.n_estimators, oob_score=True)
+            rf = RandomForestRegressor(n_estimators=self.n_estimators, oob_score=True, n_jobs=-1)
             rf.fit(X, y_star)
             f_hat = rf.oob_prediction_
 
@@ -132,18 +135,21 @@ class Merf(object):
                 # Compute the total error for this cluster
                 eps_hat_i = y_i - f_hat_i - Z_i.dot(b_hat_i)
 
+                logger.debug("------------------------------------------")
+                logger.debug("M-step, cluster {}".format(cluster_id))
+                logger.debug("error squared for cluster = {}".format(eps_hat_i.T.dot(eps_hat_i)))
+
                 # Store b_hat for cluster
                 b_hat[cluster_id] = b_hat_i
 
                 # Update the sums for sigma2_hat and D_hat. We will update after the entire loop over clusters
-                sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_i))
+                sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_inv_i))
                 D_hat_sum += np.outer(b_hat_i, b_hat_i) + (D_hat - D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(Z_i).dot(D_hat))
 
             # Normalize the sums to get sigma2_hat and D_hat
-            sigma2_hat = (1. / n_samples) * sigma2_hat_sum
+            sigma2_hat = (1. / n_obs) * sigma2_hat_sum
             D_hat = (1. / n_clusters) * D_hat_sum
 
-            logger.debug("Iteration: {}".format(iteration))
             logger.debug("b_hat = {}".format(b_hat))
             logger.debug("sigma2_hat = {}".format(sigma2_hat))
             logger.debug("D_hat = {}".format(D_hat))
