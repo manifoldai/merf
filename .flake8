@@ -1,0 +1,19 @@
+[flake8]
+exclude =
+    # No need to traverse our git directory
+    .git,
+    # The notebooks
+    notebooks/,
+    rsrc/
+
+ignore =
+    # W293: Whitespace on a line
+    W293,
+    # W291: Trailing whitespace
+    W291,
+    # E712: Comparison to True can use ==
+    E712,
+    # E402 module level import not at top of file
+    E402
+
+max-line-length = 120

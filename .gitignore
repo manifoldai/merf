@@ -102,3 +102,6 @@ ENV/
 
 # idea
 .idea/
+
+#src
+src/*.txt

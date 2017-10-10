@@ -1,3 +1,9 @@
+"""
+Data Generating Process
+
+:copyright: 2017 Manifold, Inc.
+:author: Sourav Dey <sdey@manifold.ai>
+"""
 import logging
 import numpy as np
 import pandas as pd

@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestRegressor
 
 logging.basicConfig(
     format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-    level=logging.DEBUG)
+    level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -144,7 +144,9 @@ class Merf(object):
 
                 # Update the sums for sigma2_hat and D_hat. We will update after the entire loop over clusters
                 sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_inv_i))
-                D_hat_sum += np.outer(b_hat_i, b_hat_i) + (D_hat - D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(Z_i).dot(D_hat))
+                # sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_i))
+                D_hat_sum += np.outer(b_hat_i, b_hat_i) + \
+                             (D_hat - D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(Z_i).dot(D_hat))  # noqa: E127
 
             # Normalize the sums to get sigma2_hat and D_hat
             sigma2_hat = (1. / n_obs) * sigma2_hat_sum
@@ -173,9 +175,11 @@ class Merf(object):
                 R_hat_i = sigma2_hat * I_i
                 b_hat_i = b_hat[cluster_id]
 
-                gll += (y_i - f_hat_i - Z_i.dot(b_hat_i)).T.dot(np.linalg.pinv(R_hat_i)).dot(y_i - f_hat_i - Z_i.dot(b_hat_i)) + \
-                       b_hat_i.T.dot(np.linalg.pinv(D_hat)).dot(b_hat_i) + np.log(np.linalg.det(D_hat)) + \
-                       np.log(np.linalg.det(R_hat_i))
+                gll += (y_i - f_hat_i - Z_i.dot(b_hat_i)).T.\
+                           dot(np.linalg.pinv(R_hat_i)).\
+                           dot(y_i - f_hat_i - Z_i.dot(b_hat_i)) +\
+                       b_hat_i.T.dot(np.linalg.pinv(D_hat)).dot(b_hat_i) + np.log(np.linalg.det(D_hat)) +\
+                       np.log(np.linalg.det(R_hat_i))  # noqa: E127
 
             self.gll_history.append(gll)
 
