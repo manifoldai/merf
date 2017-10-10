@@ -37,12 +37,15 @@ def generate_test_data(n_samples_per_cluster, m, sigma_b, sigma_e):
     for i in range(0, n_clusters):
         cluster_id = i
         n_samples = n_samples_per_cluster[i]
-        zi = cluster_id * np.ones(n_samples)
+        zi = cluster_id * np.ones(n_samples, dtype=np.int8)  # want cluster id to be int
         Z.extend(zi)
 
     # one hot encode it for easier addition to get response
-    Z_df = pd.DataFrame(Z)
     Z_ohe = pd.get_dummies(Z)
+
+    # create groups partition and random intercept value
+    clusters_df = pd.Series(Z)
+    Z_df = pd.DataFrame(np.ones(len(Z)))
 
     # draw the random effect bias for each cluster
     b = np.random.normal(loc=0, scale=sigma_b, size=n_clusters)
@@ -56,7 +59,7 @@ def generate_test_data(n_samples_per_cluster, m, sigma_b, sigma_e):
     # ~~~~~~~~~ Response Generation ~~~~~~~~~~ #
     # add fixed effect, random effect, and noise to get final response
     y = m * g + re + eps
-    y_df = pd.DataFrame(y)
+    y_df = pd.Series(y)
 
     # ~~~~~~~~~ Metrics Generation ~~~~~~~~~~ #
     # compute the ptev and prev
@@ -68,4 +71,4 @@ def generate_test_data(n_samples_per_cluster, m, sigma_b, sigma_e):
     logger.info("PTEV = {}, PREV = {}.".format(ptev, prev))
 
     # return relevant vectors and metrics
-    return y_df, X_df, Z_df, b, ptev, prev
+    return y_df, X_df, Z_df, clusters_df, b, ptev, prev
