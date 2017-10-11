@@ -1,5 +1,5 @@
 """
-Simple Test File
+Evaluate effectiveness of MERF model.
 
 :copyright: 2017 Manifold, Inc.
 :author: Sourav Dey <sdey@manifold.ai>

@@ -14,7 +14,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class Merf(object):
+class MERF(object):
 
     def __init__(self, n_estimators=300, min_iterations=100, gll_early_stop_threshold=1e-4, max_iterations=200):
         self.n_estimators = n_estimators
