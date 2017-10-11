@@ -87,7 +87,6 @@ class MERF(object):
         n_obs = len(y)
         q = Z.shape[1]  # random effects dimension
         Z = np.array(Z)  # cast Z to numpy array (required if it's a dataframe, otw, the matrix mults later fail)
-        # p = X.shape[1]  # fixed effects dimension
 
         # Create a series where cluster_id is the index and n_i is the value
         cluster_counts = clusters.value_counts()
@@ -115,13 +114,15 @@ class MERF(object):
 
         # Intialize for EM algorithm
         iteration = 0
-        b_hat = np.zeros((n_clusters, q))  # dimension is n_clusters X q
-        b_hat_df = pd.DataFrame(b_hat, index=cluster_counts.index)
+        # Note we are using a dataframe to hold the b_hat because this is easier to index into by cluster_id
+        # Before we were using a simple numpy array -- but we were indexing into that wrong because the cluster_ids
+        # are not necessarily in order.
+        b_hat_df = pd.DataFrame(np.zeros((n_clusters, q)), index=cluster_counts.index)
         sigma2_hat = 1
         D_hat = np.eye(q)
 
         # vectors to hold history
-        self.b_hat_history.append(b_hat)
+        self.b_hat_history.append(b_hat_df)
         self.sigma2_hat_history.append(sigma2_hat)
         self.D_hat_history.append(D_hat)
 
@@ -138,7 +139,8 @@ class MERF(object):
                 # Get cached cluster slices
                 y_i = y_by_cluster[cluster_id]
                 Z_i = Z_by_cluster[cluster_id]
-                b_hat_i = b_hat[cluster_id]
+                b_hat_i = b_hat_df.ix[cluster_id]
+                logger.debug("E-step, cluster {}, b_hat = {}".format(cluster_id, b_hat_i))
                 indices_i = indices_by_cluster[cluster_id]
 
                 # Compute y_star for this cluster and put back in right place
@@ -174,7 +176,9 @@ class MERF(object):
 
                 # Compute b_hat_i
                 V_hat_inv_i = np.linalg.pinv(V_hat_i)
+                logger.debug("M-step, pre-update, cluster {}, b_hat = {}".format(cluster_id, b_hat_df.ix[cluster_id]))
                 b_hat_i = D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(y_i - f_hat_i)
+                logger.debug("M-step, post-update, cluster {}, b_hat = {}".format(cluster_id, b_hat_i))
 
                 # Compute the total error for this cluster
                 eps_hat_i = y_i - f_hat_i - Z_i.dot(b_hat_i)
@@ -184,8 +188,10 @@ class MERF(object):
                 logger.debug("error squared for cluster = {}".format(eps_hat_i.T.dot(eps_hat_i)))
 
                 # Store b_hat for cluster both in numpy array and in dataframe
-                b_hat[cluster_id] = b_hat_i
-                b_hat_df.ix[cluster_id] = b_hat_i
+                # Note this HAS to be assigned with loc, otw whole df get erroneously assigned and things go to hell
+                b_hat_df.loc[cluster_id, :] = b_hat_i
+                logger.debug("M-step, post-update, recalled from db, cluster {}, "
+                             "b_hat = {}".format(cluster_id, b_hat_df.ix[cluster_id]))
 
                 # Update the sums for sigma2_hat and D_hat. We will update after the entire loop over clusters
                 sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_inv_i))
@@ -196,12 +202,12 @@ class MERF(object):
             sigma2_hat = (1. / n_obs) * sigma2_hat_sum
             D_hat = (1. / n_clusters) * D_hat_sum
 
-            logger.debug("b_hat = {}".format(b_hat))
+            logger.debug("b_hat = {}".format(b_hat_df))
             logger.debug("sigma2_hat = {}".format(sigma2_hat))
             logger.debug("D_hat = {}".format(D_hat))
 
             # Store off history so that we can see the evolution of the EM algorithm
-            self.b_hat_history.append(b_hat)
+            self.b_hat_history.append(b_hat_df)
             self.sigma2_hat_history.append(sigma2_hat)
             self.D_hat_history.append(D_hat)
 
@@ -217,7 +223,7 @@ class MERF(object):
                 # Slice f_hat and get b_hat
                 f_hat_i = f_hat[indices_i]
                 R_hat_i = sigma2_hat * I_i
-                b_hat_i = b_hat[cluster_id]
+                b_hat_i = b_hat_df.ix[cluster_id]
 
                 gll += (y_i - f_hat_i - Z_i.dot(b_hat_i)).T.\
                            dot(np.linalg.pinv(R_hat_i)).\
