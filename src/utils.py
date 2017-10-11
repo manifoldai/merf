@@ -36,8 +36,6 @@ class MERFDataGenerator(object):
         # Track known and new cluster ids -- will be used later for splitting.
         num_known_clusters = len(n_known_per_cluster)
         known_cluster_ids = range(0, num_known_clusters)
-        num_new_clusters = len(n_test_new_per_cluster)
-        new_cluster_ids = range(num_known_clusters, num_known_clusters + num_new_clusters)
 
         # Generate all the data at once.
         merged_df = self.generate_samples(n_samples_per_cluster)
@@ -117,7 +115,8 @@ class MERFDataGenerator(object):
         # ~~~~~~~~~ Metrics Generation ~~~~~~~~~~ #
         # compute the ptev and prev
         sigma_fixed = self.m * sigma_g
-        ptev = 100 * ((sigma_fixed ** 2 + self.sigma_b ** 2) / (sigma_fixed ** 2 + self.sigma_b ** 2 + self.sigma_e ** 2))
+        ptev = 100 * ((sigma_fixed ** 2 + self.sigma_b ** 2) /
+                      (sigma_fixed ** 2 + self.sigma_b ** 2 + self.sigma_e ** 2))
         prev = 100 * (self.sigma_b ** 2 / (sigma_fixed ** 2 + self.sigma_b ** 2))
 
         logger.info("Drew {} samples from {} clusters.".format(sum(n_samples_per_cluster), n_clusters))

@@ -5,4 +5,3 @@
 # train, test_known, test_new = dgm.generate_split_samples([1, 3], [2, 2], [2, 2])
 
 # check outcomes
-

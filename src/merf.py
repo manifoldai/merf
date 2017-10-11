@@ -44,6 +44,7 @@ class MERF(object):
         n_clusters = clusters.nunique()
         n_obs = len(y)
         q = Z.shape[1]  # random effects dimension
+        Z = np.array(Z)  # cast Z to numpy array (required if it's a dataframe, otw, the matrix mults later fail)
         # p = X.shape[1]  # fixed effects dimension
 
         # Create a series where cluster_id is the index and n_i is the value
