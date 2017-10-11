@@ -189,7 +189,6 @@ class MERF(object):
 
                 # Update the sums for sigma2_hat and D_hat. We will update after the entire loop over clusters
                 sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_inv_i))
-                # sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_i))
                 D_hat_sum += np.outer(b_hat_i, b_hat_i) + \
                              (D_hat - D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(Z_i).dot(D_hat))  # noqa: E127
 
