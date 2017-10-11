@@ -7,6 +7,7 @@ Mixed Effects Random Forest
 import logging
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.exceptions import NotFittedError
 
 logging.basicConfig(
     format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
@@ -31,9 +32,26 @@ class MERF(object):
         self.gll_history = []
 
     def predict(self, X, Z, clusters):
-        pass
+        """
+        Predict using trained MERF.
+        :param X:
+        :param Z:
+        :param clusters:
+        :return:
+        """
+        if self.trained_rf is None:
+            raise NotFittedError("This MERF instance is not fitted yet. Call 'fit' with appropriate arguments before "
+                                 "using this method")
 
     def fit(self, X, Z, clusters, y):
+        """
+        Fit MERF using EM algorithm.
+        :param X: fixed effect covariates
+        :param Z: random effect covariates
+        :param clusters: cluster assignments for samples
+        :param y: response/target variable
+        :return: fitted model
+        """
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Input Checks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         assert(len(Z) == len(X))
@@ -187,6 +205,8 @@ class MERF(object):
         # Store off most recent random forest model and b_hat as the model to be used in the prediction stage
         self.trained_rf = rf
         self.trained_b = b_hat
+
+        return self
 
     def score(self, X):
         pass
