@@ -6,6 +6,7 @@ Mixed Effects Random Forest
 """
 import logging
 import numpy as np
+import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.exceptions import NotFittedError
 
@@ -23,6 +24,7 @@ class MERF(object):
         self.gll_early_stop_threshold = gll_early_stop_threshold
         self.max_iterations = max_iterations
 
+        self.cluster_counts = None
         self.trained_rf = None
         self.trained_b = None
 
@@ -33,15 +35,37 @@ class MERF(object):
 
     def predict(self, X, Z, clusters):
         """
-        Predict using trained MERF.
-        :param X:
-        :param Z:
-        :param clusters:
-        :return:
+        Predict using trained MERF.  For known clusters the trained random effect correction is applied. For unknown
+        clusters the pure fixed effect (RF) estimate is used.
+        :param X: fixed effect covariates
+        :param Z: random effect covariates
+        :param clusters: cluster assignments for samples
+        :return: y_hat, i.e. predictions
         """
         if self.trained_rf is None:
             raise NotFittedError("This MERF instance is not fitted yet. Call 'fit' with appropriate arguments before "
                                  "using this method")
+
+        Z = np.array(Z)  # cast Z to numpy array (required if it's a dataframe, otw, the matrix mults later fail)
+
+        # Apply random forest to all
+        y_hat = self.trained_rf.predict(X)
+
+        # Apply random effects correction to all known clusters. Note that then, by default, the new clusters get no
+        # random effects correction -- which is the desired behavior.
+        for cluster_id in self.cluster_counts.index:
+            indices_i = (clusters == cluster_id)
+
+            # If cluster doesn't exist in test data that's ok. Just move on.
+            if len(indices_i) == 0:
+                continue
+
+            # If cluster does exist, apply the correction.
+            b_i = self.trained_b.ix[cluster_id]
+            Z_i = Z[indices_i]
+            y_hat[indices_i] += Z_i.dot(b_i)
+
+        return y_hat
 
     def fit(self, X, Z, clusters, y):
         """
@@ -92,6 +116,7 @@ class MERF(object):
         # Intialize for EM algorithm
         iteration = 0
         b_hat = np.zeros((n_clusters, q))  # dimension is n_clusters X q
+        b_hat_df = pd.DataFrame(b_hat, index=cluster_counts.index)
         sigma2_hat = 1
         D_hat = np.eye(q)
 
@@ -158,8 +183,9 @@ class MERF(object):
                 logger.debug("M-step, cluster {}".format(cluster_id))
                 logger.debug("error squared for cluster = {}".format(eps_hat_i.T.dot(eps_hat_i)))
 
-                # Store b_hat for cluster
+                # Store b_hat for cluster both in numpy array and in dataframe
                 b_hat[cluster_id] = b_hat_i
+                b_hat_df.ix[cluster_id] = b_hat_i
 
                 # Update the sums for sigma2_hat and D_hat. We will update after the entire loop over clusters
                 sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_inv_i))
@@ -203,8 +229,9 @@ class MERF(object):
             self.gll_history.append(gll)
 
         # Store off most recent random forest model and b_hat as the model to be used in the prediction stage
+        self.cluster_counts = cluster_counts
         self.trained_rf = rf
-        self.trained_b = b_hat
+        self.trained_b = b_hat_df
 
         return self
 
