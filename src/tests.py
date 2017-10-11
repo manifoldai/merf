@@ -1,12 +1,11 @@
 
-# 1. test data generation is correct.
-
+# 1. test data generation is correct
 # dgm = MERFDataGenerator(m=0.6, sigma_b=2, sigma_e=1)
 # train, test_known, test_new = dgm.generate_split_samples([1, 3], [2, 2], [2, 2])
 # check outcomes
 
 
-# 2. Check not fitted error thrown
+# 2. Check not fitted error thrown when model is not trained
 
 
 # 3. Check that fitting works as expected and no errors are thrown
@@ -15,3 +14,8 @@
 # same goes for Z
 # Check that gll history is accessible
 # Check that all histories are available
+
+
+# 4. Check that prediction works
+# check that proper length yhat is returned
+# check that is towks with X and Z being pandas and numpy
