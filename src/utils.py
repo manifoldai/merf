@@ -21,6 +21,19 @@ class MERFDataGenerator(object):
         self.ptev = None
         self.prev = None
 
+    @staticmethod
+    def create_cluster_sizes_array(sizes, num_clusters_per_size):
+        """
+        Helper function.
+        :param cluster_sizes:
+        :param num_clusters_per_size:
+        :return:
+        """
+        cluster_sizes = []
+        for size in sizes:
+            cluster_sizes.extend(size * np.ones(num_clusters_per_size, dtype=np.int8))
+        return cluster_sizes
+
     def generate_split_samples(self, n_training_per_cluster, n_test_known_per_cluster, n_test_new_per_cluster):
         """
         Generate samples split into training and two test sets.

@@ -225,7 +225,7 @@ class MERF(object):
                            dot(y_i - f_hat_i - Z_i.dot(b_hat_i)) +\
                        b_hat_i.T.dot(np.linalg.pinv(D_hat)).dot(b_hat_i) + np.log(np.linalg.det(D_hat)) +\
                        np.log(np.linalg.det(R_hat_i))  # noqa: E127
-
+            logger.info("GLL is {} at iteration {}.".format(gll, iteration))
             self.gll_history.append(gll)
 
         # Store off most recent random forest model and b_hat as the model to be used in the prediction stage
