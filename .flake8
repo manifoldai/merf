@@ -4,7 +4,8 @@ exclude =
     .git,
     # The notebooks
     notebooks/,
-    rsrc/
+    __init__.py,
+    src/__init__.py
 
 ignore =
     # W293: Whitespace on a line
