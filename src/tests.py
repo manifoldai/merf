@@ -1,21 +1,111 @@
+"""
+MERF Unit Tests
 
-# 1. test data generation is correct
-# dgm = MERFDataGenerator(m=0.6, sigma_b=2, sigma_e=1)
-# train, test_known, test_new = dgm.generate_split_samples([1, 3], [2, 2], [2, 2])
-# check outcomes
+Run with this command for verbose output:
+> python tests.py -v
 
-
-# 2. Check not fitted error thrown when model is not trained
-
-
-# 3. Check that fitting works as expected and no errors are thrown
-# check that model is returned
-# check that it works with X being pandas and numpy
-# same goes for Z
-# Check that gll history is accessible
-# Check that all histories are available
+:copyright: 2017 Manifold, Inc.
+:author: Sourav Dey <sdey@manifold.ai>
+"""
+import unittest
+from utils import MERFDataGenerator
+from merf import MERF
+from sklearn.exceptions import NotFittedError
+import numpy as np
 
 
-# 4. Check that prediction works
-# check that proper length yhat is returned
-# check that is towks with X and Z being pandas and numpy
+class DataGenerationTest(unittest.TestCase):
+
+    def test_create_cluster_sizes(self):
+        clusters = MERFDataGenerator.create_cluster_sizes_array([1, 2, 3], 1)
+        self.assertListEqual(clusters, [1, 2, 3])
+
+        clusters = MERFDataGenerator.create_cluster_sizes_array([30, 20, 7], 3)
+        self.assertListEqual(clusters, [30, 30, 30, 20, 20, 20, 7, 7, 7])
+
+    def test_generate_samples(self):
+        dg = MERFDataGenerator(m=0.6, sigma_b=4.5, sigma_e=1)
+        df = dg.generate_samples([1, 2, 3])
+        # check columns
+        self.assertListEqual(df.columns.tolist(), ['y', 'X_0', 'X_1', 'X_2', 'Z', 'cluster'])
+        # check length
+        self.assertEqual(len(df), 6)
+        # check cluster sizes
+        self.assertEqual(len(df[df['cluster'] == 0]), 1)
+        self.assertEqual(len(df[df['cluster'] == 1]), 2)
+        self.assertEqual(len(df[df['cluster'] == 2]), 3)
+
+    def test_generate_split_samples(self):
+        dg = MERFDataGenerator(m=0.7, sigma_b=2.7, sigma_e=1)
+        train, test_known, test_new = dg.generate_split_samples([1, 3], [3, 2], [1, 1])
+        # check all have same columns
+        self.assertListEqual(train.columns.tolist(), ['y', 'X_0', 'X_1', 'X_2', 'Z', 'cluster'])
+        self.assertListEqual(test_known.columns.tolist(), ['y', 'X_0', 'X_1', 'X_2', 'Z', 'cluster'])
+        self.assertListEqual(test_new.columns.tolist(), ['y', 'X_0', 'X_1', 'X_2', 'Z', 'cluster'])
+
+        # check length
+        self.assertEqual(len(train), 4)
+        self.assertEqual(len(test_known), 5)
+        self.assertEqual(len(test_new), 2)
+
+        # check cluster sizes
+        self.assertEqual(len(train[train['cluster'] == 0]), 1)
+        self.assertEqual(len(train[train['cluster'] == 1]), 3)
+        self.assertEqual(len(test_known[test_known['cluster'] == 0]), 3)
+        self.assertEqual(len(test_known[test_known['cluster'] == 1]), 2)
+        self.assertEqual(len(test_new[test_new['cluster'] == 2]), 1)
+        self.assertEqual(len(test_new[test_new['cluster'] == 3]), 1)
+
+
+class MERFTest(unittest.TestCase):
+
+    def setUp(self):
+        dg = MERFDataGenerator(m=0.6, sigma_b=4.5, sigma_e=1)
+        train, test_known, test_new = dg.generate_split_samples([1, 3], [3, 2], [1, 1])
+
+        self.X_train = train[['X_0', 'X_1', 'X_2']]
+        self.Z_train = train[['Z']]
+        self.clusters_train = train['cluster']
+        self.y_train = train['y']
+
+        self.X_known = test_known[['X_0', 'X_1', 'X_2']]
+        self.Z_known = test_known[['Z']]
+        self.clusters_known = test_known['cluster']
+        self.y_known = test_known['y']
+
+        self.X_new = test_new[['X_0', 'X_1', 'X_2']]
+        self.Z_new = test_new[['Z']]
+        self.clusters_new = test_new['cluster']
+        self.y_new = test_new['y']
+
+    def test_not_fitted_error(self):
+        m = MERF()
+        with self.assertRaises(NotFittedError):
+            m.predict(self.X_known, self.Z_known, self.clusters_known)
+
+    def test_fit_and_predict_pandas(self):
+        m = MERF(max_iterations=10)
+        # Train
+        m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
+        self.assertEqual(len(m.gll_history), 10)
+        # Predict Known Clusters
+        yhat_known = m.predict(self.X_known, self.Z_known, self.clusters_known)
+        self.assertEqual(len(yhat_known), 5)
+        # Predict New Clusters
+        yhat_new = m.predict(self.X_new, self.Z_new, self.clusters_new)
+        self.assertEqual(len(yhat_new), 2)
+
+    def test_fit_and_predict_numpy(self):
+        m = MERF(max_iterations=10)
+        # Train
+        m.fit(np.array(self.X_train), np.array(self.Z_train), self.clusters_train, self.y_train)
+        # Predict Known Clusters
+        yhat_known = m.predict(np.array(self.X_known), np.array(self.Z_known), self.clusters_known)
+        self.assertEqual(len(yhat_known), 5)
+        # Predict New Clusters
+        yhat_new = m.predict(np.array(self.X_new), np.array(self.Z_new), self.clusters_new)
+        self.assertEqual(len(yhat_new), 2)
+
+
+if __name__ == '__main__':
+    unittest.main()

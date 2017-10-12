@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class MERF(object):
 
-    def __init__(self, n_estimators=300, min_iterations=100, gll_early_stop_threshold=1e-4, max_iterations=200):
+    def __init__(self, n_estimators=300, min_iterations=10, gll_early_stop_threshold=1e-4, max_iterations=20):
         self.n_estimators = n_estimators
         self.min_iterations = min_iterations
         self.gll_early_stop_threshold = gll_early_stop_threshold
@@ -61,7 +61,7 @@ class MERF(object):
                 continue
 
             # If cluster does exist, apply the correction.
-            b_i = self.trained_b.ix[cluster_id]
+            b_i = self.trained_b.loc[cluster_id]
             Z_i = Z[indices_i]
             y_hat[indices_i] += Z_i.dot(b_i)
 
@@ -139,7 +139,7 @@ class MERF(object):
                 # Get cached cluster slices
                 y_i = y_by_cluster[cluster_id]
                 Z_i = Z_by_cluster[cluster_id]
-                b_hat_i = b_hat_df.ix[cluster_id]
+                b_hat_i = b_hat_df.loc[cluster_id]  # used to be ix
                 logger.debug("E-step, cluster {}, b_hat = {}".format(cluster_id, b_hat_i))
                 indices_i = indices_by_cluster[cluster_id]
 
@@ -176,7 +176,7 @@ class MERF(object):
 
                 # Compute b_hat_i
                 V_hat_inv_i = np.linalg.pinv(V_hat_i)
-                logger.debug("M-step, pre-update, cluster {}, b_hat = {}".format(cluster_id, b_hat_df.ix[cluster_id]))
+                logger.debug("M-step, pre-update, cluster {}, b_hat = {}".format(cluster_id, b_hat_df.loc[cluster_id]))
                 b_hat_i = D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(y_i - f_hat_i)
                 logger.debug("M-step, post-update, cluster {}, b_hat = {}".format(cluster_id, b_hat_i))
 
@@ -191,7 +191,7 @@ class MERF(object):
                 # Note this HAS to be assigned with loc, otw whole df get erroneously assigned and things go to hell
                 b_hat_df.loc[cluster_id, :] = b_hat_i
                 logger.debug("M-step, post-update, recalled from db, cluster {}, "
-                             "b_hat = {}".format(cluster_id, b_hat_df.ix[cluster_id]))
+                             "b_hat = {}".format(cluster_id, b_hat_df.loc[cluster_id]))
 
                 # Update the sums for sigma2_hat and D_hat. We will update after the entire loop over clusters
                 sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_inv_i))
@@ -223,7 +223,7 @@ class MERF(object):
                 # Slice f_hat and get b_hat
                 f_hat_i = f_hat[indices_i]
                 R_hat_i = sigma2_hat * I_i
-                b_hat_i = b_hat_df.ix[cluster_id]
+                b_hat_i = b_hat_df.loc[cluster_id]
 
                 gll += (y_i - f_hat_i - Z_i.dot(b_hat_i)).T.\
                            dot(np.linalg.pinv(R_hat_i)).\
@@ -240,5 +240,5 @@ class MERF(object):
 
         return self
 
-    def score(self, X):
-        pass
+    def score(self, X, Z, clusters, y):
+        raise NotImplementedError()
