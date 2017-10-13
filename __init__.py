@@ -1,1 +1,1 @@
-from merf.src import MERF
+from .src import MERF
