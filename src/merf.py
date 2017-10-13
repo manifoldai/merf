@@ -225,11 +225,16 @@ class MERF(object):
                 R_hat_i = sigma2_hat * I_i
                 b_hat_i = b_hat_df.loc[cluster_id]
 
+                # Numerically stable way of computing log(det(A))
+                _, logdet_D_hat = np.linalg.slogdet(D_hat)
+                _, logdet_R_hat_i = np.linalg.slogdet(R_hat_i)
+
                 gll += (y_i - f_hat_i - Z_i.dot(b_hat_i)).T.\
                            dot(np.linalg.pinv(R_hat_i)).\
                            dot(y_i - f_hat_i - Z_i.dot(b_hat_i)) +\
-                       b_hat_i.T.dot(np.linalg.pinv(D_hat)).dot(b_hat_i) + np.log(np.linalg.det(D_hat)) +\
-                       np.log(np.linalg.det(R_hat_i))  # noqa: E127
+                       b_hat_i.T.dot(np.linalg.pinv(D_hat)).dot(b_hat_i) + logdet_D_hat + \
+                       logdet_R_hat_i  # noqa: E127
+
             logger.info("GLL is {} at iteration {}.".format(gll, iteration))
             self.gll_history.append(gll)
 
