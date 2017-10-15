@@ -207,7 +207,7 @@ class MERF(object):
             logger.debug("D_hat = {}".format(D_hat))
 
             # Store off history so that we can see the evolution of the EM algorithm
-            self.b_hat_history.append(b_hat_df)
+            self.b_hat_history.append(b_hat_df.copy())
             self.sigma2_hat_history.append(sigma2_hat)
             self.D_hat_history.append(D_hat)
 
