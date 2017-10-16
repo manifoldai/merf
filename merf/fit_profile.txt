@@ -1,0 +1,159 @@
+Timer unit: 1e-06 s
+
+Total time: 9.00967 s
+File: ../src/merf.py
+Function: fit at line 36
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    36                                               @profile
+    37                                               def fit(self, X, Z, clusters, y):
+    38                                           
+    39                                                   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Input Checks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    40         1           31     31.0      0.0          assert(len(Z) == len(X))
+    41         1           23     23.0      0.0          assert(len(y) == len(X))
+    42         1            6      6.0      0.0          assert(len(clusters) == len(X))
+    43                                           
+    44                                                   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Initialization ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    45         1          238    238.0      0.0          n_clusters = clusters.nunique()
+    46         1            7      7.0      0.0          n_obs = len(y)
+    47         1            9      9.0      0.0          q = Z.shape[1]  # random effects dimension
+    48                                                   # p = X.shape[1]  # fixed effects dimension
+    49                                           
+    50                                                   # Create a series where cluster_id is the index and n_i is the value
+    51         1         1392   1392.0      0.0          cluster_counts = clusters.value_counts()
+    52                                           
+    53                                                   # Do expensive slicing operations only once
+    54         1            2      2.0      0.0          Z_by_cluster = {}
+    55         1            1      1.0      0.0          y_by_cluster = {}
+    56         1            1      1.0      0.0          n_by_cluster = {}
+    57         1            1      1.0      0.0          I_by_cluster = {}
+    58         1            1      1.0      0.0          indices_by_cluster = {}
+    59                                           
+    60                                                   # TODO: Can these be replaced with groupbys? Groupbys are less understandable than brute force.
+    61         5           12      2.4      0.0          for cluster_id in cluster_counts.index:
+    62                                                       # Find the index for all the samples from this cluster in the large vector
+    63         4         1130    282.5      0.0              indices_i = (clusters == cluster_id)
+    64         4            7      1.8      0.0              indices_by_cluster[cluster_id] = indices_i
+    65                                           
+    66                                                       # Slice those samples from Z and y
+    67         4         1560    390.0      0.0              Z_by_cluster[cluster_id] = Z[indices_i]
+    68         4         4095   1023.8      0.0              y_by_cluster[cluster_id] = y[indices_i]
+    69                                           
+    70                                                       # Get the counts for each cluster and create the appropriately sized identity matrix for later computations
+    71         4          145     36.2      0.0              n_by_cluster[cluster_id] = cluster_counts[cluster_id]
+    72         4          191     47.8      0.0              I_by_cluster[cluster_id] = np.eye(cluster_counts[cluster_id])
+    73                                           
+    74                                                   # Intialize for EM algorithm
+    75         1            1      1.0      0.0          iteration = 0
+    76         1            3      3.0      0.0          b_hat = np.zeros((n_clusters, q))  # dimension is n_clusters X q
+    77         1            1      1.0      0.0          sigma2_hat = 1
+    78         1            7      7.0      0.0          D_hat = np.eye(q)
+    79                                           
+    80                                                   # vectors to hold history
+    81         1            2      2.0      0.0          self.b_hat_history.append(b_hat)
+    82         1            1      1.0      0.0          self.sigma2_hat_history.append(sigma2_hat)
+    83         1            1      1.0      0.0          self.D_hat_history.append(D_hat)
+    84                                           
+    85        11           13      1.2      0.0          while iteration < self.max_iterations:
+    86        10           13      1.3      0.0              iteration += 1
+    87        10           75      7.5      0.0              logger.debug("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    88        10           73      7.3      0.0              logger.debug("Iteration: {}".format(iteration))
+    89        10           78      7.8      0.0              logger.debug("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    90                                           
+    91                                                       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ E-step ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    92                                                       # fill up y_star for all clusters
+    93        10          190     19.0      0.0              y_star = np.zeros(len(y))
+    94        50          161      3.2      0.0              for cluster_id in cluster_counts.index:
+    95                                                           # Get cached cluster slices
+    96        40           77      1.9      0.0                  y_i = y_by_cluster[cluster_id]
+    97        40           46      1.1      0.0                  Z_i = Z_by_cluster[cluster_id]
+    98        40           65      1.6      0.0                  b_hat_i = b_hat[cluster_id]
+    99        40           65      1.6      0.0                  indices_i = indices_by_cluster[cluster_id]
+   100                                           
+   101                                                           # Compute y_star for this cluster and put back in right place
+   102        40        14857    371.4      0.2                  y_star_i = y_i - Z_i.dot(b_hat_i)
+   103        40         1177     29.4      0.0                  y_star[indices_i] = y_star_i
+   104                                           
+   105                                                       # check that still one dimensional
+   106                                                       # TODO: Other checks we want to do?
+   107        10           17      1.7      0.0              assert(len(y_star.shape) == 1)
+   108                                           
+   109                                                       # Do the random forest regression with all the fixed effects features
+   110        10         2082    208.2      0.0              rf = RandomForestRegressor(n_estimators=self.n_estimators, oob_score=True, n_jobs=-1)
+   111        10      8734521 873452.1     96.9              rf.fit(X, y_star)
+   112        10           32      3.2      0.0              f_hat = rf.oob_prediction_
+   113                                           
+   114                                                       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ M-step ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   115        10           13      1.3      0.0              sigma2_hat_sum = 0
+   116        10           18      1.8      0.0              D_hat_sum = 0
+   117                                           
+   118        50          288      5.8      0.0              for cluster_id in cluster_counts.index:
+   119                                                           # Get cached cluster slices
+   120        40          102      2.5      0.0                  indices_i = indices_by_cluster[cluster_id]
+   121        40           51      1.3      0.0                  y_i = y_by_cluster[cluster_id]
+   122        40           58      1.4      0.0                  Z_i = Z_by_cluster[cluster_id]
+   123        40           52      1.3      0.0                  n_i = n_by_cluster[cluster_id]
+   124        40           49      1.2      0.0                  I_i = I_by_cluster[cluster_id]
+   125                                           
+   126                                                           # index into f_hat
+   127        40         1101     27.5      0.0                  f_hat_i = f_hat[indices_i]
+   128                                           
+   129                                                           # Compute V_hat_i
+   130        40        52735   1318.4      0.6                  V_hat_i = Z_i.dot(D_hat).dot(Z_i.T) + sigma2_hat * I_i
+   131                                           
+   132                                                           # Compute b_hat_i
+   133        40        35606    890.1      0.4                  V_hat_inv_i = np.linalg.pinv(V_hat_i)
+   134        40        22843    571.1      0.3                  b_hat_i = D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(y_i - f_hat_i)
+   135                                           
+   136                                                           # Compute the total error for this cluster
+   137        40        24097    602.4      0.3                  eps_hat_i = y_i - f_hat_i - Z_i.dot(b_hat_i)
+   138                                           
+   139        40          317      7.9      0.0                  logger.debug("------------------------------------------")
+   140        40          307      7.7      0.0                  logger.debug("M-step, cluster {}".format(cluster_id))
+   141        40         5440    136.0      0.1                  logger.debug("error squared for cluster = {}".format(eps_hat_i.T.dot(eps_hat_i)))
+   142                                           
+   143                                                           # Store b_hat for cluster
+   144        40          157      3.9      0.0                  b_hat[cluster_id] = b_hat_i
+   145                                           
+   146                                                           # Update the sums for sigma2_hat and D_hat. We will update after the entire loop over clusters
+   147        40         5319    133.0      0.1                  sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_inv_i))
+   148        40        14943    373.6      0.2                  D_hat_sum += np.outer(b_hat_i, b_hat_i) + (D_hat - D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(Z_i).dot(D_hat))
+   149                                           
+   150                                                       # Normalize the sums to get sigma2_hat and D_hat
+   151        10           20      2.0      0.0              sigma2_hat = (1. / n_obs) * sigma2_hat_sum
+   152        10           39      3.9      0.0              D_hat = (1. / n_clusters) * D_hat_sum
+   153                                           
+   154        10         4045    404.5      0.0              logger.debug("b_hat = {}".format(b_hat))
+   155        10           89      8.9      0.0              logger.debug("sigma2_hat = {}".format(sigma2_hat))
+   156        10         2104    210.4      0.0              logger.debug("D_hat = {}".format(D_hat))
+   157                                           
+   158                                                       # Store off history so that we can see the evolution of the EM algorithm
+   159        10           29      2.9      0.0              self.b_hat_history.append(b_hat)
+   160        10           14      1.4      0.0              self.sigma2_hat_history.append(sigma2_hat)
+   161        10           13      1.3      0.0              self.D_hat_history.append(D_hat)
+   162                                           
+   163                                                       # Generalized Log Likelihood computation to check convergence
+   164        10           10      1.0      0.0              gll = 0
+   165        50          203      4.1      0.0              for cluster_id in cluster_counts.index:
+   166                                                           # Get cached cluster slices
+   167        40           86      2.1      0.0                  indices_i = indices_by_cluster[cluster_id]
+   168        40           49      1.2      0.0                  y_i = y_by_cluster[cluster_id]
+   169        40           49      1.2      0.0                  Z_i = Z_by_cluster[cluster_id]
+   170        40           53      1.3      0.0                  I_i = I_by_cluster[cluster_id]
+   171                                           
+   172                                                           # Slice f_hat and get b_hat
+   173        40         1168     29.2      0.0                  f_hat_i = f_hat[indices_i]
+   174        40          453     11.3      0.0                  R_hat_i = sigma2_hat * I_i
+   175        40          109      2.7      0.0                  b_hat_i = b_hat[cluster_id]
+   176                                           
+   177        40           42      1.1      0.0                  gll += (y_i - f_hat_i - Z_i.dot(b_hat_i)).T.dot(np.linalg.pinv(R_hat_i)).dot(y_i - f_hat_i - Z_i.dot(b_hat_i)) + \
+   178        40        67810   1695.2      0.8                         b_hat_i.T.dot(np.linalg.pinv(D_hat)).dot(b_hat_i) + np.log(np.linalg.det(D_hat)) + \
+   179        40         7349    183.7      0.1                         np.log(np.linalg.det(R_hat_i))
+   180                                           
+   181        10           28      2.8      0.0              self.gll_history.append(gll)
+   182                                           
+   183                                                   # Store off most recent random forest model and b_hat as the model to be used in the prediction stage
+   184         1            2      2.0      0.0          self.trained_rf = rf
+   185         1            2      2.0      0.0          self.trained_b = b_hat
+

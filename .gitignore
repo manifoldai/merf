@@ -103,5 +103,5 @@ ENV/
 # idea
 .idea/
 
-#src
-src/*.txt
+#merf
+merf/*.txt
