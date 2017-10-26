@@ -12,6 +12,7 @@ from utils import MERFDataGenerator
 from merf import MERF
 from sklearn.exceptions import NotFittedError
 import numpy as np
+import pandas as pd
 
 
 class DataGenerationTest(unittest.TestCase):
@@ -25,7 +26,7 @@ class DataGenerationTest(unittest.TestCase):
 
     def test_generate_samples(self):
         dg = MERFDataGenerator(m=0.6, sigma_b=4.5, sigma_e=1)
-        df = dg.generate_samples([1, 2, 3])
+        df, ptev, prev = dg.generate_samples([1, 2, 3])
         # check columns
         self.assertListEqual(df.columns.tolist(), ['y', 'X_0', 'X_1', 'X_2', 'Z', 'cluster'])
         # check length
@@ -37,7 +38,7 @@ class DataGenerationTest(unittest.TestCase):
 
     def test_generate_split_samples(self):
         dg = MERFDataGenerator(m=0.7, sigma_b=2.7, sigma_e=1)
-        train, test_known, test_new = dg.generate_split_samples([1, 3], [3, 2], [1, 1])
+        train, test_known, test_new, training_ids, ptev, prev = dg.generate_split_samples([1, 3], [3, 2], [1, 1])
         # check all have same columns
         self.assertListEqual(train.columns.tolist(), ['y', 'X_0', 'X_1', 'X_2', 'Z', 'cluster'])
         self.assertListEqual(test_known.columns.tolist(), ['y', 'X_0', 'X_1', 'X_2', 'Z', 'cluster'])
@@ -56,12 +57,38 @@ class DataGenerationTest(unittest.TestCase):
         self.assertEqual(len(test_new[test_new['cluster'] == 2]), 1)
         self.assertEqual(len(test_new[test_new['cluster'] == 3]), 1)
 
+        # Check training ids
+        self.assertListEqual(training_ids.tolist(), [0, 1])
+
+    def test_ohe_clusters(self):
+        training_cluster_ids = np.array([0, 1, 2, 3])
+        # Training like encoding -- all categories in matrix
+        X_ohe = MERFDataGenerator.ohe_clusters(pd.Series([0, 0, 1, 2, 2, 2, 3]),
+                                               training_cluster_ids=training_cluster_ids)
+        # check columns and sums
+        self.assertListEqual(X_ohe.columns.tolist(), ['cluster_0', 'cluster_1', 'cluster_2', 'cluster_3'])
+        self.assertListEqual(X_ohe.sum().tolist(), [2, 1, 3, 1])
+
+        # New encoding -- no categories in matrix
+        X_ohe = MERFDataGenerator.ohe_clusters(pd.Series([4, 4, 5, 6, 6, 7]),
+                                               training_cluster_ids=training_cluster_ids)
+        # check columns and sums
+        self.assertListEqual(X_ohe.columns.tolist(), ['cluster_0', 'cluster_1', 'cluster_2', 'cluster_3'])
+        self.assertListEqual(X_ohe.sum().tolist(), [0, 0, 0, 0])
+
+        # Mixed encoding -- some categories in matrix
+        X_ohe = MERFDataGenerator.ohe_clusters(pd.Series([1, 1, 3, 0, 0, 4, 5, 6, 6, 7]),
+                                               training_cluster_ids=training_cluster_ids)
+        # check columns and sums
+        self.assertListEqual(X_ohe.columns.tolist(), ['cluster_0', 'cluster_1', 'cluster_2', 'cluster_3'])
+        self.assertListEqual(X_ohe.sum().tolist(), [2, 2, 0, 1])
+
 
 class MERFTest(unittest.TestCase):
 
     def setUp(self):
         dg = MERFDataGenerator(m=0.6, sigma_b=4.5, sigma_e=1)
-        train, test_known, test_new = dg.generate_split_samples([1, 3], [3, 2], [1, 1])
+        train, test_known, test_new, train_cluster_ids, ptev, prev = dg.generate_split_samples([1, 3], [3, 2], [1, 1])
 
         self.X_train = train[['X_0', 'X_1', 'X_2']]
         self.Z_train = train[['Z']]

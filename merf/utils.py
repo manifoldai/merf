@@ -22,6 +22,32 @@ class MERFDataGenerator(object):
         self.prev = None
 
     @staticmethod
+    def ohe_clusters(clusters, training_cluster_ids):
+        """
+        Helper function to one hot encode cluster ids based on training cluster ids. Note that for the "new" clusters
+        this should encode to a matrix of all zeros.
+        :param clusters:
+        :param training_cluster_ids:
+        :return:
+        """
+        clusters_prime = clusters.astype('category', categories=training_cluster_ids)
+        X_ohe = pd.get_dummies(clusters_prime, prefix='cluster')
+        return X_ohe
+
+    @staticmethod
+    def create_X_with_ohe_clusters(X, clusters, training_cluster_ids):
+        """
+        Helper function to join one hot encoded cluster ids with the feature matrix X.
+        :param X:
+        :param clusters:
+        :param training_cluster_ids:
+        :return:
+        """
+        X_ohe = MERFDataGenerator.ohe_clusters(clusters, training_cluster_ids)
+        X_w_ohe = pd.merge(X, X_ohe, left_index=True, right_index=True)
+        return X_w_ohe
+
+    @staticmethod
     def create_cluster_sizes_array(sizes, num_clusters_per_size):
         """
         Helper function.
@@ -51,7 +77,7 @@ class MERFDataGenerator(object):
         known_cluster_ids = range(0, num_known_clusters)
 
         # Generate all the data at once.
-        merged_df = self.generate_samples(n_samples_per_cluster)
+        merged_df, ptev, prev = self.generate_samples(n_samples_per_cluster)
 
         # Select out new cluster test data (this is easy)
         new_cluster_test_data = merged_df[merged_df['cluster'] >= num_known_clusters]
@@ -70,7 +96,10 @@ class MERFDataGenerator(object):
         training_data = pd.concat(train_dfs)
         known_cluster_test_data = pd.concat(test_dfs)
 
-        return training_data, known_cluster_test_data, new_cluster_test_data
+        # Store off the unique labels in the training data
+        training_cluster_ids = np.sort(training_data['cluster'].unique())
+
+        return training_data, known_cluster_test_data, new_cluster_test_data, training_cluster_ids, ptev, prev
 
     def generate_samples(self, n_samples_per_cluster):
         """
@@ -142,4 +171,4 @@ class MERFDataGenerator(object):
         # merge all the separate matrices into one matrix
         merged_df = pd.concat((y_df, X_df, Z_df, clusters_df), axis=1)
         merged_df.columns = ['y', 'X_0', 'X_1', 'X_2', 'Z', 'cluster']
-        return merged_df
+        return merged_df, ptev, prev
