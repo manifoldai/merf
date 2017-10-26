@@ -105,3 +105,4 @@ ENV/
 
 #merf
 merf/*.txt
+*.pkl
