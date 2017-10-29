@@ -7,7 +7,7 @@ def readme():
 
 
 setup(name='merf',
-      version='0.1',
+      version='0.2',
       description='Mixed Effects Random Forest',
       long_description=readme(),
       classifiers=[
