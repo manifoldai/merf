@@ -106,3 +106,4 @@ ENV/
 #merf
 merf/*.txt
 *.pkl
+data/mse_experiments.csv
