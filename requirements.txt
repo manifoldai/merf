@@ -71,7 +71,6 @@ Pygments==2.2.0
 pygobject==3.28.3
 pyparsing==2.2.0
 pytest==3.5.0
-python-apt==1.1.0b1+ubuntu0.16.4.1
 python-dateutil==2.6.1
 python-dotenv==0.8.2
 pytz==2018.3
