@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class MERF(object):
-
     def __init__(self, n_estimators=300, min_iterations=10, gll_early_stop_threshold=1e-4, max_iterations=20):
         self.n_estimators = n_estimators
         self.min_iterations = min_iterations
@@ -40,8 +39,10 @@ class MERF(object):
         :return: y_hat, i.e. predictions
         """
         if self.trained_rf is None:
-            raise NotFittedError("This MERF instance is not fitted yet. Call 'fit' with appropriate arguments before "
-                                 "using this method")
+            raise NotFittedError(
+                "This MERF instance is not fitted yet. Call 'fit' with appropriate arguments before "
+                "using this method"
+            )
 
         Z = np.array(Z)  # cast Z to numpy array (required if it's a dataframe, otw, the matrix mults later fail)
 
@@ -51,7 +52,7 @@ class MERF(object):
         # Apply random effects correction to all known clusters. Note that then, by default, the new clusters get no
         # random effects correction -- which is the desired behavior.
         for cluster_id in self.cluster_counts.index:
-            indices_i = (clusters == cluster_id)
+            indices_i = clusters == cluster_id
 
             # If cluster doesn't exist in test data that's ok. Just move on.
             if len(indices_i) == 0:
@@ -75,9 +76,9 @@ class MERF(object):
         """
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Input Checks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        assert(len(Z) == len(X))
-        assert(len(y) == len(X))
-        assert(len(clusters) == len(X))
+        assert len(Z) == len(X)
+        assert len(y) == len(X)
+        assert len(clusters) == len(X)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Initialization ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         n_clusters = clusters.nunique()
@@ -98,7 +99,7 @@ class MERF(object):
         # TODO: Can these be replaced with groupbys? Groupbys are less understandable than brute force.
         for cluster_id in cluster_counts.index:
             # Find the index for all the samples from this cluster in the large vector
-            indices_i = (clusters == cluster_id)
+            indices_i = clusters == cluster_id
             indices_by_cluster[cluster_id] = indices_i
 
             # Slice those samples from Z and y
@@ -146,7 +147,7 @@ class MERF(object):
 
             # check that still one dimensional
             # TODO: Other checks we want to do?
-            assert(len(y_star.shape) == 1)
+            assert len(y_star.shape) == 1
 
             # Do the random forest regression with all the fixed effects features
             rf = RandomForestRegressor(n_estimators=self.n_estimators, oob_score=True, n_jobs=-1)
@@ -187,17 +188,20 @@ class MERF(object):
                 # Store b_hat for cluster both in numpy array and in dataframe
                 # Note this HAS to be assigned with loc, otw whole df get erroneously assigned and things go to hell
                 b_hat_df.loc[cluster_id, :] = b_hat_i
-                logger.debug("M-step, post-update, recalled from db, cluster {}, "
-                             "b_hat = {}".format(cluster_id, b_hat_df.loc[cluster_id]))
+                logger.debug(
+                    "M-step, post-update, recalled from db, cluster {}, "
+                    "b_hat = {}".format(cluster_id, b_hat_df.loc[cluster_id])
+                )
 
                 # Update the sums for sigma2_hat and D_hat. We will update after the entire loop over clusters
                 sigma2_hat_sum += eps_hat_i.T.dot(eps_hat_i) + sigma2_hat * (n_i - sigma2_hat * np.trace(V_hat_inv_i))
-                D_hat_sum += np.outer(b_hat_i, b_hat_i) + \
-                             (D_hat - D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(Z_i).dot(D_hat))  # noqa: E127
+                D_hat_sum += np.outer(b_hat_i, b_hat_i) + (
+                    D_hat - D_hat.dot(Z_i.T).dot(V_hat_inv_i).dot(Z_i).dot(D_hat)
+                )  # noqa: E127
 
             # Normalize the sums to get sigma2_hat and D_hat
-            sigma2_hat = (1. / n_obs) * sigma2_hat_sum
-            D_hat = (1. / n_clusters) * D_hat_sum
+            sigma2_hat = (1.0 / n_obs) * sigma2_hat_sum
+            D_hat = (1.0 / n_clusters) * D_hat_sum
 
             logger.debug("b_hat = {}".format(b_hat_df))
             logger.debug("sigma2_hat = {}".format(sigma2_hat))
@@ -226,11 +230,14 @@ class MERF(object):
                 _, logdet_D_hat = np.linalg.slogdet(D_hat)
                 _, logdet_R_hat_i = np.linalg.slogdet(R_hat_i)
 
-                gll += (y_i - f_hat_i - Z_i.dot(b_hat_i)).T.\
-                           dot(np.linalg.pinv(R_hat_i)).\
-                           dot(y_i - f_hat_i - Z_i.dot(b_hat_i)) +\
-                       b_hat_i.T.dot(np.linalg.pinv(D_hat)).dot(b_hat_i) + logdet_D_hat + \
-                       logdet_R_hat_i  # noqa: E127
+                gll += (
+                    (y_i - f_hat_i - Z_i.dot(b_hat_i))
+                    .T.dot(np.linalg.pinv(R_hat_i))
+                    .dot(y_i - f_hat_i - Z_i.dot(b_hat_i))
+                    + b_hat_i.T.dot(np.linalg.pinv(D_hat)).dot(b_hat_i)
+                    + logdet_D_hat
+                    + logdet_R_hat_i
+                )  # noqa: E127
 
             logger.info("GLL is {} at iteration {}.".format(gll, iteration))
             self.gll_history.append(gll)
