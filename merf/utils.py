@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class MERFDataGenerator(object):
-
     def __init__(self, m, sigma_b, sigma_e):
         self.m = m
         self.sigma_b = sigma_b
@@ -30,8 +29,8 @@ class MERFDataGenerator(object):
         :param training_cluster_ids:
         :return:
         """
-        clusters_prime = clusters.astype('category', categories=training_cluster_ids)
-        X_ohe = pd.get_dummies(clusters_prime, prefix='cluster')
+        clusters_prime = clusters.astype("category", categories=training_cluster_ids)
+        X_ohe = pd.get_dummies(clusters_prime, prefix="cluster")
         return X_ohe
 
     @staticmethod
@@ -65,7 +64,7 @@ class MERFDataGenerator(object):
         Generate samples split into training and two test sets.
         :return:
         """
-        assert(len(n_training_per_cluster) == len(n_test_known_per_cluster))
+        assert len(n_training_per_cluster) == len(n_test_known_per_cluster)
 
         # Create global vector to pass to generate_samples function. Add the two known cluster numbers to get the
         # total to get for known clusters. Then append the new cluster numbers.
@@ -80,15 +79,15 @@ class MERFDataGenerator(object):
         merged_df, ptev, prev = self.generate_samples(n_samples_per_cluster)
 
         # Select out new cluster test data (this is easy)
-        new_cluster_test_data = merged_df[merged_df['cluster'] >= num_known_clusters]
+        new_cluster_test_data = merged_df[merged_df["cluster"] >= num_known_clusters]
 
         # Select out known cluster data, but separate this into training set and test set
         train_dfs = []
         test_dfs = []
         for cluster_id, num_train, num_test in zip(known_cluster_ids, n_training_per_cluster, n_test_known_per_cluster):
-            cluster_df = merged_df[merged_df['cluster'] == cluster_id]
+            cluster_df = merged_df[merged_df["cluster"] == cluster_id]
             train_cluster_df = cluster_df.iloc[0:num_train]
-            test_cluster_df = cluster_df.iloc[num_train:(num_train + num_test)]
+            test_cluster_df = cluster_df.iloc[num_train : (num_train + num_test)]
             train_dfs.append(train_cluster_df)
             test_dfs.append(test_cluster_df)
 
@@ -97,7 +96,7 @@ class MERFDataGenerator(object):
         known_cluster_test_data = pd.concat(test_dfs)
 
         # Store off the unique labels in the training data
-        training_cluster_ids = np.sort(training_data['cluster'].unique())
+        training_cluster_ids = np.sort(training_data["cluster"].unique())
 
         return training_data, known_cluster_test_data, new_cluster_test_data, training_cluster_ids, ptev, prev
 
@@ -157,8 +156,9 @@ class MERFDataGenerator(object):
         # ~~~~~~~~~ Metrics Generation ~~~~~~~~~~ #
         # compute the ptev and prev
         sigma_fixed = self.m * sigma_g
-        ptev = 100 * ((sigma_fixed ** 2 + self.sigma_b ** 2) /
-                      (sigma_fixed ** 2 + self.sigma_b ** 2 + self.sigma_e ** 2))
+        ptev = 100 * (
+            (sigma_fixed ** 2 + self.sigma_b ** 2) / (sigma_fixed ** 2 + self.sigma_b ** 2 + self.sigma_e ** 2)
+        )
         prev = 100 * (self.sigma_b ** 2 / (sigma_fixed ** 2 + self.sigma_b ** 2))
 
         logger.info("Drew {} samples from {} clusters.".format(sum(n_samples_per_cluster), n_clusters))
@@ -170,5 +170,5 @@ class MERFDataGenerator(object):
 
         # merge all the separate matrices into one matrix
         merged_df = pd.concat((y_df, X_df, Z_df, clusters_df), axis=1)
-        merged_df.columns = ['y', 'X_0', 'X_1', 'X_2', 'Z', 'cluster']
+        merged_df.columns = ["y", "X_0", "X_1", "X_2", "Z", "cluster"]
         return merged_df, ptev, prev
