@@ -1,4 +1,4 @@
-# Mixed Effects Random Forest
+# Mixed Effects Random Forest.
 
 [![Build Status](https://semaphoreci.com/api/v1/manifoldai/merf/branches/master/badge.svg)](https://semaphoreci.com/manifoldai/merf)
 
