@@ -141,7 +141,10 @@ class MERFTest(unittest.TestCase):
         # Test that extra arguments to RandomForestRegressor are handled
         m = MERF(max_iterations=10, rf_opts={'max_depth': 3, 'n_jobs': 1})
         m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
-        self.assertTrue(m.trained_rf.get_params()['max_depth'] == 3 and m.trained_rf.get_params()['n_jobs'] == 1)
+        # Test for max depth
+        self.assertTrue(m.trained_rf.get_params()['max_depth'] == 3)
+        # Test for n_jobs
+        self.assertTrue(m.trained_rf.get_params()['n_jobs'] == 1)
 
 
 if __name__ == "__main__":

@@ -31,9 +31,11 @@ class MERF(object):
 
         self.rf_opts = {} if rf_opts is None else rf_opts
 
-        rf_args = ['criterion', 'max_depth', 'min_samples_split', 'min_samples_leaf', 'min_weight_fraction_leaf',
-                   'max_features', 'max_leaf_nodes', 'min_impurity_decrease', 'min_impurity_split', 'bootstrap',
-                   'oob_score', 'n_jobs', 'random_state', 'verbose', 'warm_start', 'n_estimators']
+        rf_args = [
+            'criterion', 'max_depth', 'min_samples_split', 'min_samples_leaf', 'min_weight_fraction_leaf',
+            'max_features', 'max_leaf_nodes', 'min_impurity_decrease', 'min_impurity_split', 'bootstrap',
+            'oob_score', 'n_jobs', 'random_state', 'verbose', 'warm_start', 'n_estimators'
+        ]
         wrong_rf_args = set(self.rf_opts.keys()).difference(rf_args)
 
         if len(wrong_rf_args):
