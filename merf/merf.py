@@ -124,7 +124,8 @@ class MERF(object):
         self.sigma2_hat_history.append(sigma2_hat)
         self.D_hat_history.append(D_hat)
 
-        stop_flag, iter_begun = False, False
+        stop_flag = False
+        iter_begun = False
 
         while iteration < self.max_iterations and not stop_flag:
             iteration += 1
@@ -252,8 +253,7 @@ class MERF(object):
                     logger.debug("stop threshold = {}".format(curr_threshold))
 
                     if curr_threshold < self.gll_early_stop_threshold:
-                        logger.info("Gll {} less than threshold {}, stopping early ...".
-                                    format(gll, curr_threshold))
+                        logger.info("Gll {} less than threshold {}, stopping early ...".format(gll, curr_threshold))
                         stop_flag = True
 
         # Store off most recent random forest model and b_hat as the model to be used in the prediction stage
