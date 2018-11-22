@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class MERF(object):
-    def __init__(self, n_estimators=300, min_iterations=10, gll_early_stop_threshold=1e-4, max_iterations=20):
+    def __init__(self, n_estimators=300, min_iterations=10, gll_early_stop_threshold=1e-4, max_iterations=20, rf_opts=None):
         self.n_estimators = n_estimators
         self.min_iterations = min_iterations
         self.gll_early_stop_threshold = gll_early_stop_threshold
@@ -28,6 +28,32 @@ class MERF(object):
         self.sigma2_hat_history = []
         self.D_hat_history = []
         self.gll_history = []
+
+        self.rf_opts = {} if rf_opts is None else rf_opts
+
+        rf_args = ['criterion', 'max_depth', 'min_samples_split', 'min_samples_leaf', 'min_weight_fraction_leaf',
+                   'max_features', 'max_leaf_nodes', 'min_impurity_decrease', 'min_impurity_split', 'bootstrap',
+                   'oob_score', 'n_jobs', 'random_state', 'verbose', 'warm_start', 'n_estimators']
+        wrong_rf_args = set(self.rf_opts.keys()).difference(rf_args)
+
+        if len(wrong_rf_args):
+            raise TypeError("RandomForestRegressor does not accept arguments {}".format(", ".join(wrong_rf_args)))
+
+        if 'n_estimators' in self.rf_opts:
+            logger.info("n_estimators in rf_args ignored in favor of n_estimators argument to MERF constructor")
+            del self.rf_opts['n_estimators']
+
+        if 'warm_start' in self.rf_opts:
+            logger.info("warm_start in rf_args ignored as each RandomForestRegressor fit only once")
+            del self.rf_opts['warm_start']
+
+        if 'oob_score' in self.rf_opts:
+            logger.info("oob_score in rf_args ignored as oob_score must be True")
+
+        self.rf_opts['oob_score'] = True
+
+        if 'n_jobs' not in self.rf_opts:
+            self.rf_opts['n_jobs'] = -1
 
     def predict(self, X, Z, clusters):
         """
@@ -150,7 +176,7 @@ class MERF(object):
             assert len(y_star.shape) == 1
 
             # Do the random forest regression with all the fixed effects features
-            rf = RandomForestRegressor(n_estimators=self.n_estimators, oob_score=True, n_jobs=-1)
+            rf = RandomForestRegressor(n_estimators=self.n_estimators, **self.rf_opts)
             rf.fit(X, y_star)
             f_hat = rf.oob_prediction_
 

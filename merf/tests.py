@@ -132,6 +132,17 @@ class MERFTest(unittest.TestCase):
         yhat_new = m.predict(np.array(self.X_new), np.array(self.Z_new), self.clusters_new)
         self.assertEqual(len(yhat_new), 2)
 
+    def test_handle_wrong_rf_arg(self):
+        # Test for a TypeError when an argument to rf_opts is passed that is not applicable to RandomForestRegressor
+        with self.assertRaises(TypeError):
+            m = MERF(max_iterations=10, rf_opts={'wrong_arg': 99})
+
+    def test_handle_rf_args(self):
+        # Test that extra arguments to RandomForestRegressor are handled
+        m = MERF(max_iterations=10, rf_opts={'max_depth': 3, 'n_jobs': 1})
+        m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
+        self.assertTrue(m.trained_rf.get_params()['max_depth'] == 3 and m.trained_rf.get_params()['n_jobs'] == 1)
+
 
 if __name__ == "__main__":
     unittest.main()
