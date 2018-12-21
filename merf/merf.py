@@ -14,12 +14,16 @@ logger = logging.getLogger(__name__)
 
 
 class MERF(object):
-    def __init__(self, min_iterations=10, gll_early_stop_threshold=1e-4, max_iterations=20, rf_params=None):
+    def __init__(self, n_estimators=300, min_iterations=10,
+                 gll_early_stop_threshold=1e-4, max_iterations=20, rf_params=None):
         self.min_iterations = min_iterations
         self.gll_early_stop_threshold = gll_early_stop_threshold
         self.max_iterations = max_iterations
-        self.rf_params = {'n_estimators': 300} if rf_params is None else rf_params
+
+        self.rf_params = {'n_estimators': n_estimators} if rf_params is None else rf_params
         self.rf_params.update({'oob_score': True, 'n_jobs': -1})
+        if 'n_estimators' not in self.rf_params:
+            self.rf_params.update({'n_estimators': n_estimators})
 
         self.cluster_counts = None
         self.trained_rf = None
