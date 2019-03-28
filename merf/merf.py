@@ -14,15 +14,17 @@ logger = logging.getLogger(__name__)
 
 
 class MERF(object):
-    def __init__(self, n_estimators=300, min_iterations=10, gll_early_stop_threshold=None, max_iterations=20, rf_params=None):
+    def __init__(
+        self, n_estimators=300, min_iterations=10, gll_early_stop_threshold=None, max_iterations=20, rf_params=None
+    ):
         self.min_iterations = min_iterations
         self.gll_early_stop_threshold = gll_early_stop_threshold
         self.max_iterations = max_iterations
 
-        self.rf_params = {'n_estimators': n_estimators} if rf_params is None else rf_params
-        self.rf_params.update({'oob_score': True, 'n_jobs': -1})
-        if 'n_estimators' not in self.rf_params:
-            self.rf_params.update({'n_estimators': n_estimators})
+        self.rf_params = {"n_estimators": n_estimators} if rf_params is None else rf_params
+        self.rf_params.update({"oob_score": True, "n_jobs": -1})
+        if "n_estimators" not in self.rf_params:
+            self.rf_params.update({"n_estimators": n_estimators})
 
         self.cluster_counts = None
         self.trained_rf = None
@@ -128,10 +130,9 @@ class MERF(object):
         self.sigma2_hat_history.append(sigma2_hat)
         self.D_hat_history.append(D_hat)
 
-        stop_flag = False
-        iter_begun = False
+        early_stop_flag = False
 
-        while iteration < self.max_iterations and not stop_flag:
+        while iteration < self.max_iterations and not early_stop_flag:
             iteration += 1
             logger.debug("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             logger.debug("Iteration: {}".format(iteration))
@@ -249,16 +250,15 @@ class MERF(object):
             logger.info("GLL is {} at iteration {}.".format(gll, iteration))
             self.gll_history.append(gll)
 
-            if self.gll_early_stop_threshold is not None:
-                if not iter_begun:
-                    iter_begun = True
-                else:
-                    curr_threshold = np.abs((gll - self.gll_history[-2]) / self.gll_history[-2])
-                    logger.debug("stop threshold = {}".format(curr_threshold))
+            # Early Stopping. This code is entered only if the early stop threshold is specified and
+            # if the gll_history array is longer than 1 element, e.g. we are past the first iteration.
+            if self.gll_early_stop_threshold is not None and len(self.gll_history) > 1:
+                curr_threshold = np.abs((gll - self.gll_history[-2]) / self.gll_history[-2])
+                logger.debug("stop threshold = {}".format(curr_threshold))
 
-                    if curr_threshold < self.gll_early_stop_threshold:
-                        logger.info("Gll {} less than threshold {}, stopping early ...".format(gll, curr_threshold))
-                        stop_flag = True
+                if curr_threshold < self.gll_early_stop_threshold:
+                    logger.info("Gll {} less than threshold {}, stopping early ...".format(gll, curr_threshold))
+                    early_stop_flag = True
 
         # Store off most recent random forest model and b_hat as the model to be used in the prediction stage
         self.cluster_counts = cluster_counts
