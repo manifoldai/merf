@@ -1,0 +1,26 @@
+version: 2
+jobs:
+  lint:
+    parallelism: 4
+    docker:
+      - image: manifoldai/docker-ml-dev:1.0
+    steps:
+      - checkout
+      - run:
+          name: Black lint check
+          command: |
+            pip install black && black --check ./merf
+  test:
+    parallelism: 4
+    docker:
+    - image: manifoldai/docker-ml-dev:1.0
+    steps:
+    - checkout
+    - run: python merf/tests.py
+
+workflows:
+  version: 2
+  lint-and-test:
+    jobs:
+      - lint
+      - test
