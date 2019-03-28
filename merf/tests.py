@@ -86,6 +86,8 @@ class DataGenerationTest(unittest.TestCase):
 
 class MERFTest(unittest.TestCase):
     def setUp(self):
+        np.random.seed(3187)
+
         dg = MERFDataGenerator(m=0.6, sigma_b=4.5, sigma_e=1)
         train, test_known, test_new, train_cluster_ids, ptev, prev = dg.generate_split_samples([1, 3], [3, 2], [1, 1])
 
@@ -131,6 +133,15 @@ class MERFTest(unittest.TestCase):
         # Predict New Clusters
         yhat_new = m.predict(np.array(self.X_new), np.array(self.Z_new), self.clusters_new)
         self.assertEqual(len(yhat_new), 2)
+
+    def test_early_stopping(self):
+        np.random.seed(3187)
+        # Create a MERF model with a high early stopping threshold
+        m = MERF(max_iterations=10, gll_early_stop_threshold=0.1)
+        # Fit
+        m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
+        # The number of iterations should be less than max_iterations
+        self.assertTrue(len(m.gll_history) < 10)
 
 
 if __name__ == "__main__":

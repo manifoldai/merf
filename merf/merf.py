@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class MERF(object):
-    def __init__(self, n_estimators=300, min_iterations=10,
-                 gll_early_stop_threshold=1e-4, max_iterations=20, rf_params=None):
+    def __init__(self, n_estimators=300, min_iterations=10, gll_early_stop_threshold=None, max_iterations=20, rf_params=None):
         self.min_iterations = min_iterations
         self.gll_early_stop_threshold = gll_early_stop_threshold
         self.max_iterations = max_iterations
@@ -129,7 +128,10 @@ class MERF(object):
         self.sigma2_hat_history.append(sigma2_hat)
         self.D_hat_history.append(D_hat)
 
-        while iteration < self.max_iterations:
+        stop_flag = False
+        iter_begun = False
+
+        while iteration < self.max_iterations and not stop_flag:
             iteration += 1
             logger.debug("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             logger.debug("Iteration: {}".format(iteration))
@@ -246,6 +248,17 @@ class MERF(object):
 
             logger.info("GLL is {} at iteration {}.".format(gll, iteration))
             self.gll_history.append(gll)
+
+            if self.gll_early_stop_threshold is not None:
+                if not iter_begun:
+                    iter_begun = True
+                else:
+                    curr_threshold = np.abs((gll - self.gll_history[-2]) / self.gll_history[-2])
+                    logger.debug("stop threshold = {}".format(curr_threshold))
+
+                    if curr_threshold < self.gll_early_stop_threshold:
+                        logger.info("Gll {} less than threshold {}, stopping early ...".format(gll, curr_threshold))
+                        stop_flag = True
 
         # Store off most recent random forest model and b_hat as the model to be used in the prediction stage
         self.cluster_counts = cluster_counts
