@@ -4,7 +4,7 @@ jobs:
     parallelism: 1
     docker:
       - image: manifoldai/docker-ml-dev:1.0
-
+    working_directory: ~/repo
     steps:
       - checkout
       - run:
@@ -15,7 +15,7 @@ jobs:
     parallelism: 1
     docker:
     - image: manifoldai/docker-ml-dev:1.0
-
+    working_directory: ~/repo
     steps:
     - checkout
     - run: python merf/tests.py
