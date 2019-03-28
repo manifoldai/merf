@@ -98,7 +98,7 @@ class MERFDataGenerator(object):
         # Store off the unique labels in the training data
         training_cluster_ids = np.sort(training_data["cluster"].unique())
 
-        return training_data, known_cluster_test_data, new_cluster_test_data, training_cluster_ids, ptev, prev
+        return (training_data, known_cluster_test_data, new_cluster_test_data, training_cluster_ids, ptev, prev)
 
     def generate_samples(self, n_samples_per_cluster):
         """
