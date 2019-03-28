@@ -1,7 +1,7 @@
 version: 2
 jobs:
   lint:
-    parallelism: 1
+    parallelism: 4
     docker:
       - image: manifoldai/docker-ml-dev:1.0
     steps:
@@ -11,7 +11,7 @@ jobs:
           command: |
             pip install black && black --check ./merf
   test:
-    parallelism: 1
+    parallelism: 4
     docker:
     - image: manifoldai/docker-ml-dev:1.0
     steps:
