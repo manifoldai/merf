@@ -59,4 +59,4 @@ The `\src` directory contains all the source code:
 * `tests.py` contain some simple unit tests.
 * `utils.py` contains a class for generating synthetic data that can be used to test the accuracy of MERF.  The process implemented is the same as that in this [paper](http://www.tandfonline.com/doi/abs/10.1080/00949655.2012.741599).
 
-The `\notebooks` directory contains some useful notebooks that show you how to use the code and evaluate MERF performance.  Most of the techniques implemented are the same as those in this [paper](http://www.tandfonline.com/doi/abs/10.1080/00949655.2012.741599)
+The `\notebooks` directory contains some useful notebooks that show you how to use the code and evaluate MERF performance.  Most of the techniques implemented are the same as those in this [paper](http://www.tandfonline.com/doi/abs/10.1080/00949655.2012.741599).
