@@ -33,6 +33,4 @@ jobs:
         flake8 merf --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Unit tests
       run: |
-        python merf/merf_test.py
-      env:
-        PYTHONPATH: /home/runner/work/merf/merf
+        python merf/merf_test.py -v
