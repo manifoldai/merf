@@ -13,8 +13,8 @@ import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 
-from merf.merf import MERF
-from merf.utils import MERFDataGenerator
+from merf import MERF
+from utils import MERFDataGenerator
 
 
 class DataGenerationTest(unittest.TestCase):
