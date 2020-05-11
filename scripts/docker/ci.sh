@@ -11,6 +11,6 @@ echo 'Running flake'
 flake8 merf
 
 echo 'Running pytest'
-pytest merf
+python merf/merf_test.py -v
 
 echo 'Finished tests'
