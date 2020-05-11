@@ -37,4 +37,4 @@ jobs:
         pip install pytest
         pytest merf
       env:
-        PYTHONPATH: /home/runner/work/merf/merf
+        PYTHONPATH: /home/runner/work/merf
