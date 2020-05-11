@@ -5,8 +5,8 @@ Mixed Effects Random Forest Evaluator
 :author: Sourav Dey <sdey@manifold.ai>
 """
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def plot_training_stats(model):

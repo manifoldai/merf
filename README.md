@@ -1,6 +1,6 @@
 # Mixed Effects Random Forest
 
-[![CircleCI](https://circleci.com/gh/manifoldai/merf.svg?style=svg)](https://circleci.com/gh/manifoldai/merf)
+![](https://github.com/manifoldai/merf/workflows/ci/badge.svg)
 
 This repository contains a pure Python implementation of a mixed effects random forest (MERF) algorithm. It can be used, out of the box, to fit a MERF model and predict with it.
 Read more about MERF in [this](https://towardsdatascience.com/mixed-effects-random-forests-6ecbb85cb177) blogpost. 
