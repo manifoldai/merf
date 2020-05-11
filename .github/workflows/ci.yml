@@ -23,7 +23,7 @@ jobs:
     - name: Lint with black
       run: |
         pip install black
-        balck merf
+        black merf
     - name: Lint with flake8
       run: |
         pip install flake8
