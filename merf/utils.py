@@ -5,6 +5,7 @@ Data Generating Process
 :author: Sourav Dey <sdey@manifold.ai>
 """
 import logging
+
 import numpy as np
 import pandas as pd
 
@@ -29,7 +30,7 @@ class MERFDataGenerator(object):
         :param training_cluster_ids:
         :return:
         """
-        clusters_prime = clusters.astype("category", categories=training_cluster_ids)
+        clusters_prime = pd.Categorical(clusters, categories=training_cluster_ids)
         X_ohe = pd.get_dummies(clusters_prime, prefix="cluster")
         return X_ohe
 

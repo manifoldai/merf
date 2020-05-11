@@ -8,11 +8,13 @@ Run with this command for verbose output:
 :author: Sourav Dey <sdey@manifold.ai>
 """
 import unittest
-from utils import MERFDataGenerator
-from merf import MERF
-from sklearn.exceptions import NotFittedError
+
 import numpy as np
 import pandas as pd
+from sklearn.exceptions import NotFittedError
+
+from merf.merf import MERF
+from merf.utils import MERFDataGenerator
 
 
 class DataGenerationTest(unittest.TestCase):
