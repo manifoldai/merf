@@ -1,0 +1,21 @@
+name: Continuous Integration
+
+on: [push]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    container:
+      image: docker://manifoldai/orbyter-ml-dev:2.0
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Black
+      run: black --check merf
+    - name: Flake8 
+      run: flake8 merf
+    - name: Unit Tests
+      run: |
+        pip install -r docker/requirements.txt
+        pytest merf
+      env:
