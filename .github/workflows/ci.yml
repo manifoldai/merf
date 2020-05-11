@@ -18,3 +18,5 @@ jobs:
       run: |
         pip install -r docker/requirements.txt
         pytest merf
+      env:
+        PYTHONPATH: /__w/merf/merf/
