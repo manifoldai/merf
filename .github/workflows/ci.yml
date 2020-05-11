@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: ci
 
 on: [push]
 
@@ -9,7 +9,7 @@ jobs:
       image: docker://manifoldai/orbyter-ml-dev:2.0
     steps:
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
     - name: Black
       run: black --check merf
     - name: Flake8 
