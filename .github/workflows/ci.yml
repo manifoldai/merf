@@ -23,7 +23,7 @@ jobs:
     - name: Lint with black
       run: |
         pip install black
-        black merf
+        black --check merf
     - name: Lint with flake8
       run: |
         pip install flake8
@@ -31,10 +31,9 @@ jobs:
         flake8 merf --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 merf --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Add to PYTHONPATH
-      run: |
-        echo "::set-env name=PYTHONPATH::/home/runner/work/merf/merf"
     - name: Test with pytest
       run: |
+        echo "::set-env name=PYTHONPATH::/home/runner/work/merf/merf"
+        echo $PYTHONPATH
         pip install pytest
         pytest merf
