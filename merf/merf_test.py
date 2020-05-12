@@ -136,6 +136,17 @@ class MERFTest(unittest.TestCase):
         yhat_new = m.predict(np.array(self.X_new), np.array(self.Z_new), self.clusters_new)
         self.assertEqual(len(yhat_new), 2)
 
+    def test_type_error(self):
+        m = MERF(max_iterations=10)
+        self.assertRaises(
+            TypeError,
+            m.fit,
+            np.array(self.X_train),
+            np.array(self.Z_train),
+            np.array(self.clusters_train),
+            self.y_train,
+        )
+
     def test_early_stopping(self):
         np.random.seed(3187)
         # Create a MERF model with a high early stopping threshold
