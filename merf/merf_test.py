@@ -7,10 +7,12 @@ Run with this command for verbose output:
 :copyright: 2017 Manifold, Inc.
 :author: Sourav Dey <sdey@manifold.ai>
 """
+import pickle
 import unittest
 
 import numpy as np
 import pandas as pd
+from numpy.testing import assert_almost_equal
 from sklearn.exceptions import NotFittedError
 
 from merf import MERF
@@ -155,6 +157,30 @@ class MERFTest(unittest.TestCase):
         m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
         # The number of iterations should be less than max_iterations
         self.assertTrue(len(m.gll_history) < 10)
+
+    def test_pickle(self):
+        m = MERF(max_iterations=10)
+        # Train
+        m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
+
+        # Write to pickle file
+        with open("model.pkl", "wb") as fin:
+            pickle.dump(m, fin)
+
+        # Read back from pickle file
+        with open("model.pkl", "rb") as fout:
+            m_pkl = pickle.load(fout)
+
+        # Check that m is not the same object as m_pkl
+        self.assertIsNot(m_pkl, m)
+        # Predict Known Clusters
+        yhat_known_pkl = m_pkl.predict(self.X_known, self.Z_known, self.clusters_known)
+        yhat_known = m.predict(self.X_known, self.Z_known, self.clusters_known)
+        assert_almost_equal(yhat_known_pkl, yhat_known)
+        # Predict New Clusters
+        yhat_new_pkl = m_pkl.predict(self.X_new, self.Z_new, self.clusters_new)
+        yhat_new = m.predict(self.X_new, self.Z_new, self.clusters_new)
+        assert_almost_equal(yhat_new_pkl, yhat_new)
 
 
 if __name__ == "__main__":
