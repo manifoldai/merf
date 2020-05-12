@@ -36,15 +36,18 @@ class MERF(object):
         self.D_hat_history = []
         self.gll_history = []
 
-    def predict(self, X, Z, clusters):
+    def predict(self, X: np.ndarray, Z: np.ndarray, clusters: pd.Series):
         """
         Predict using trained MERF.  For known clusters the trained random effect correction is applied. For unknown
         clusters the pure fixed effect (RF) estimate is used.
-        :param X: fixed effect covariates
-        :param Z: random effect covariates
-        :param clusters: cluster assignments for samples
+        :param X (np.ndarray): fixed effect covariates
+        :param Z (np.ndarray): random effect covariates
+        :param clusters (pd.Series): cluster assignments for samples
         :return: y_hat, i.e. predictions
         """
+        if type(clusters) != pd.Series:
+            raise TypeError("clusters must be a pandas Series.")
+
         if self.trained_rf is None:
             raise NotFittedError(
                 "This MERF instance is not fitted yet. Call 'fit' with appropriate arguments before "
@@ -72,15 +75,17 @@ class MERF(object):
 
         return y_hat
 
-    def fit(self, X, Z, clusters, y):
+    def fit(self, X: np.ndarray, Z: np.ndarray, clusters: pd.Series, y: np.ndarray):
         """
         Fit MERF using EM algorithm.
-        :param X: fixed effect covariates
-        :param Z: random effect covariates
-        :param clusters: cluster assignments for samples
-        :param y: response/target variable
+        :param X (np.ndarray): fixed effect covariates
+        :param Z (np.ndarray): random effect covariates
+        :param clusters (pd.Series): cluster assignments for samples
+        :param y (np.ndarray): response/target variable
         :return: fitted model
         """
+        if type(clusters) != pd.Series:
+            raise TypeError("clusters must be a pandas Series.")
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Input Checks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         assert len(Z) == len(X)
