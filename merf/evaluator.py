@@ -4,70 +4,54 @@ Mixed Effects Random Forest Evaluator
 :copyright: 2018 Manifold, Inc.
 :author: Sourav Dey <sdey@manifold.ai>
 """
+import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 
-def plot_training_stats(model):
+def plot_training_stats(model, num_clusters_to_plot=5):
     """
     Plot training statistics for MERF model
     :param model:
     :return:
     """
-    plt.figure(figsize=[15, 10])
+    fig = plt.figure(tight_layout=True, figsize=[15, 15])
+    gs = gridspec.GridSpec(3, 2)
 
     # Plot GLL
-    plt.subplot(221)
-    plt.plot(model.gll_history)
-    plt.grid("on")
-    plt.ylabel("GLL")
-    plt.title("GLL")
+    ax = fig.add_subplot(gs[0, 0])
+    ax.plot(model.gll_history)
+    ax.grid("on")
+    ax.set_ylabel("GLL")
+    ax.set_title("GLL")
 
     # Plot trace and determinant of Sigma_b (covariance matrix)
-    plt.subplot(222)
+    ax = fig.add_subplot(gs[0, 1])
     det_sigmaB_history = [np.linalg.det(x) for x in model.D_hat_history]
     trace_sigmaB_history = [np.trace(x) for x in model.D_hat_history]
-    plt.plot(det_sigmaB_history, label="det(Sigma_b)")
-    plt.plot(trace_sigmaB_history, label="trace(Sigma_b)")
-    plt.grid("on")
-    plt.legend()
-    plt.title("Sigma_b_hat metrics")
+    ax.plot(det_sigmaB_history, label="det(Sigma_b)")
+    ax.plot(trace_sigmaB_history, label="trace(Sigma_b)")
+    ax.grid("on")
+    ax.legend()
+    ax.set_title("Sigma_b_hat metrics")
 
-    plt.subplot(223)
-    plt.plot(model.sigma2_hat_history)
-    plt.grid("on")
-    plt.ylabel("sigma_e2_hat")
-    plt.xlabel("Iteration")
+    # Plot sigma_e across iterations
+    ax = fig.add_subplot(gs[1, 0])
+    ax.plot(model.sigma2_hat_history)
+    ax.grid("on")
+    ax.set_ylabel("sigma_e2_hat")
+    ax.set_xlabel("Iteration")
 
-    plt.subplot(224)
-    plot_bhat(model, 1)
+    # Plot bi across iterations
+    ax = fig.add_subplot(gs[1, 1])
+    for cluster_id in model.cluster_counts.index[0:num_clusters_to_plot]:
+        ax.plot(model.b_hat_history_df.xs(cluster_id, level="cluster"), label=cluster_id)
+    ax.grid("on")
+    ax.set_ylabel("b_hat")
+    ax.set_xlabel("Iteration")
 
-
-def plot_bhat(model, cluster_id):
-    """
-    Plot the bhat for a particular cluster
-    :param model:
-    :param cluster_id:
-    :return:
-    """
-    # This code does a complicated reshape and re-indexing operation to get the
-    # list of dataframes into a multi-indexed dataframe.
-    # Step 1 - vertical stack all the arrays at each iteration into a single numpy array
-    b_array = np.vstack(model.b_hat_history)
-
-    # Step 2 - Create the multi-index. Note the outer index is iteration. The inner index is cluster.
-    iterations = range(len(model.b_hat_history))
-    clusters = model.b_hat_history[0].index
-    mi = pd.MultiIndex.from_product([iterations, clusters], names=("iteration", "cluster"))
-
-    # Step 3 - Create the multi-indexed dataframe
-    b_df = pd.DataFrame(b_array, index=mi)
-
-    # Step 4 - Use the fancy xs function to access all iterations of a single cluster
-    b_df.xs(cluster_id, level="cluster").plot()
-    plt.grid("on")
-    plt.ylabel("b_hat")
-    plt.xlabel("Iteration")
-    plt.title("Cluster = {}".format(cluster_id))
-    return b_df
+    # Plot bi distributions
+    ax = fig.add_subplot(gs[2, :])
+    model.trained_b.hist(bins=15, ax=ax)
+    ax.set_xlabel("b_i")
+    ax.set_title("Distribution of b_is")

@@ -271,12 +271,34 @@ class MERF(object):
                     logger.info("Gll {} less than threshold {}, stopping early ...".format(gll, curr_threshold))
                     early_stop_flag = True
 
-        # Store off most recent random forest model and b_hat as the model to be used in the prediction stage
+        # Store off trained fixed effects model and b_hat as the model to be used in the prediction stage
         self.cluster_counts = cluster_counts
         self.trained_fe_model = self.fe_model
         self.trained_b = b_hat_df
+        self.b_hat_history_df = self._convert_bhat_history(self.b_hat_history)
 
         return self
 
     def score(self, X, Z, clusters, y):
         raise NotImplementedError()
+
+    def _convert_bhat_history(self, b_hat_history):
+        """
+        This function does a complicated reshape and re-indexing operation to get the
+        list of dataframes for the b_hat_history into a multi-indexed dataframe.  This
+        dataframe is easier to work with in plotting utilities and other downstream
+        analyses than the list of dataframes b_hat_history.
+        :param b_hat_history (list: list of dataframes of bhat at every iteration
+        :return: multi-index dataframe with outer index as iteration, inner index as cluster
+        """
+        # Step 1 - vertical stack all the arrays at each iteration into a single numpy array
+        b_array = np.vstack(b_hat_history)
+
+        # Step 2 - Create the multi-index. Note the outer index is iteration. The inner index is cluster.
+        iterations = range(len(b_hat_history))
+        clusters = b_hat_history[0].index
+        mi = pd.MultiIndex.from_product([iterations, clusters], names=("iteration", "cluster"))
+
+        # Step 3 - Create the multi-indexed dataframe
+        b_hat_history_df = pd.DataFrame(b_array, index=mi)
+        return b_hat_history_df
