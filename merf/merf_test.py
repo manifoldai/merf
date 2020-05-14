@@ -12,6 +12,7 @@ import unittest
 
 import numpy as np
 import pandas as pd
+from lightgbm import LGBMRegressor
 from numpy.testing import assert_almost_equal
 from sklearn.exceptions import NotFittedError
 
@@ -116,10 +117,10 @@ class MERFTest(unittest.TestCase):
             m.predict(self.X_known, self.Z_known, self.clusters_known)
 
     def test_fit_and_predict_pandas(self):
-        m = MERF(max_iterations=10)
+        m = MERF(max_iterations=5)
         # Train
         m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
-        self.assertEqual(len(m.gll_history), 10)
+        self.assertEqual(len(m.gll_history), 5)
         # Predict Known Clusters
         yhat_known = m.predict(self.X_known, self.Z_known, self.clusters_known)
         self.assertEqual(len(yhat_known), 5)
@@ -128,7 +129,7 @@ class MERFTest(unittest.TestCase):
         self.assertEqual(len(yhat_new), 2)
 
     def test_fit_and_predict_numpy(self):
-        m = MERF(max_iterations=10)
+        m = MERF(max_iterations=5)
         # Train
         m.fit(np.array(self.X_train), np.array(self.Z_train), self.clusters_train, self.y_train)
         # Predict Known Clusters
@@ -139,7 +140,7 @@ class MERFTest(unittest.TestCase):
         self.assertEqual(len(yhat_new), 2)
 
     def test_type_error(self):
-        m = MERF(max_iterations=10)
+        m = MERF(max_iterations=5)
         self.assertRaises(
             TypeError,
             m.fit,
@@ -152,14 +153,14 @@ class MERFTest(unittest.TestCase):
     def test_early_stopping(self):
         np.random.seed(3187)
         # Create a MERF model with a high early stopping threshold
-        m = MERF(max_iterations=10, gll_early_stop_threshold=0.1)
+        m = MERF(max_iterations=5, gll_early_stop_threshold=0.1)
         # Fit
         m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
         # The number of iterations should be less than max_iterations
-        self.assertTrue(len(m.gll_history) < 10)
+        self.assertTrue(len(m.gll_history) < 5)
 
     def test_pickle(self):
-        m = MERF(max_iterations=10)
+        m = MERF(max_iterations=5)
         # Train
         m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
 
@@ -181,6 +182,19 @@ class MERFTest(unittest.TestCase):
         yhat_new_pkl = m_pkl.predict(self.X_new, self.Z_new, self.clusters_new)
         yhat_new = m.predict(self.X_new, self.Z_new, self.clusters_new)
         assert_almost_equal(yhat_new_pkl, yhat_new)
+
+    def test_user_defined_fe_model(self):
+        lgbm = LGBMRegressor()
+        m = MERF(fixed_effects_model=lgbm, max_iterations=5)
+        # Train
+        m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
+        self.assertEqual(len(m.gll_history), 5)
+        # Predict Known Clusters
+        yhat_known = m.predict(self.X_known, self.Z_known, self.clusters_known)
+        self.assertEqual(len(yhat_known), 5)
+        # Predict New Clusters
+        yhat_new = m.predict(self.X_new, self.Z_new, self.clusters_new)
+        self.assertEqual(len(yhat_new), 2)
 
 
 if __name__ == "__main__":

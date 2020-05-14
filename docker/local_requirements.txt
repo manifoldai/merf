@@ -3,3 +3,4 @@ numpy==1.18.4
 pandas==1.0.3
 scikit-learn==0.22.2.post1
 shap==0.35.0
+lightgbm==2.3.1
