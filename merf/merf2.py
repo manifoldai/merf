@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 
 class MERF(object):
     def __init__(
-        self, 
-        fixed_effects_model=RandomForestRegressor(n_estimators=300, n_jobs=-1), 
-        gll_early_stop_threshold=None, 
-        max_iterations=20
+        self,
+        fixed_effects_model=RandomForestRegressor(n_estimators=300, n_jobs=-1),
+        gll_early_stop_threshold=None,
+        max_iterations=20,
     ):
         """
-        MERF constructor. Note that the user must pass in an already instantiated fixed_effects_model that 
+        MERF constructor. Note that the user must pass in an already instantiated fixed_effects_model that
         adheres to the sklearn regression estimator API, i.e. must have a fit() and predict() method defined.
         : param fixed_effects_model (sklearn.base.RegressorMixin): instantiated model class
         : gll_early_stop_threshold (float): early stopping threshold on GLL improvement
@@ -33,8 +33,8 @@ class MERF(object):
 
         self.cluster_counts = None
         # Note fixed_effects_model must already be instantiated when passed in.
-        self.fe_model = fixed_effects_model  
-        self.trained_fe_model = None 
+        self.fe_model = fixed_effects_model
+        self.trained_fe_model = None
         self.trained_b = None
 
         self.b_hat_history = []
@@ -170,7 +170,7 @@ class MERF(object):
             assert len(y_star.shape) == 1
 
             # Do the fixed effects regression with all the fixed effects features
-            self.fe_model.fit(X, y_star) 
+            self.fe_model.fit(X, y_star)
             f_hat = self.fe_model.predict(X)
 
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ M-step ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
