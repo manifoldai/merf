@@ -16,19 +16,25 @@ logger = logging.getLogger(__name__)
 
 class MERF(object):
     def __init__(
-        self, n_estimators=300, min_iterations=10, gll_early_stop_threshold=None, max_iterations=20, rf_params=None
+        self,
+        fixed_effects_model=RandomForestRegressor(n_estimators=300, n_jobs=-1),
+        gll_early_stop_threshold=None,
+        max_iterations=20,
     ):
-        self.min_iterations = min_iterations
+        """
+        MERF constructor. Note that the user must pass in an already instantiated fixed_effects_model that
+        adheres to the sklearn regression estimator API, i.e. must have a fit() and predict() method defined.
+        : param fixed_effects_model (sklearn.base.RegressorMixin): instantiated model class
+        : gll_early_stop_threshold (float): early stopping threshold on GLL improvement
+        : max_iterations (int): maximum number of EM iterations to train
+        """
         self.gll_early_stop_threshold = gll_early_stop_threshold
         self.max_iterations = max_iterations
 
-        self.rf_params = {"n_estimators": n_estimators} if rf_params is None else rf_params
-        self.rf_params.update({"oob_score": True, "n_jobs": -1})
-        if "n_estimators" not in self.rf_params:
-            self.rf_params.update({"n_estimators": n_estimators})
-
         self.cluster_counts = None
-        self.trained_rf = None
+        # Note fixed_effects_model must already be instantiated when passed in.
+        self.fe_model = fixed_effects_model
+        self.trained_fe_model = None
         self.trained_b = None
 
         self.b_hat_history = []
@@ -48,7 +54,7 @@ class MERF(object):
         if type(clusters) != pd.Series:
             raise TypeError("clusters must be a pandas Series.")
 
-        if self.trained_rf is None:
+        if self.trained_fe_model is None:
             raise NotFittedError(
                 "This MERF instance is not fitted yet. Call 'fit' with appropriate arguments before "
                 "using this method"
@@ -56,8 +62,8 @@ class MERF(object):
 
         Z = np.array(Z)  # cast Z to numpy array (required if it's a dataframe, otw, the matrix mults later fail)
 
-        # Apply random forest to all
-        y_hat = self.trained_rf.predict(X)
+        # Apply fixed effects model to all
+        y_hat = self.trained_fe_model.predict(X)
 
         # Apply random effects correction to all known clusters. Note that then, by default, the new clusters get no
         # random effects correction -- which is the desired behavior.
@@ -163,10 +169,9 @@ class MERF(object):
             # TODO: Other checks we want to do?
             assert len(y_star.shape) == 1
 
-            # Do the random forest regression with all the fixed effects features
-            rf = RandomForestRegressor(**self.rf_params)
-            rf.fit(X, y_star)
-            f_hat = rf.oob_prediction_
+            # Do the fixed effects regression with all the fixed effects features
+            self.fe_model.fit(X, y_star)
+            f_hat = self.fe_model.predict(X)
 
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ M-step ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             sigma2_hat_sum = 0
@@ -266,12 +271,34 @@ class MERF(object):
                     logger.info("Gll {} less than threshold {}, stopping early ...".format(gll, curr_threshold))
                     early_stop_flag = True
 
-        # Store off most recent random forest model and b_hat as the model to be used in the prediction stage
+        # Store off trained fixed effects model and b_hat as the model to be used in the prediction stage
         self.cluster_counts = cluster_counts
-        self.trained_rf = rf
+        self.trained_fe_model = self.fe_model
         self.trained_b = b_hat_df
+        self.b_hat_history_df = self._convert_bhat_history(self.b_hat_history)
 
         return self
 
     def score(self, X, Z, clusters, y):
         raise NotImplementedError()
+
+    def _convert_bhat_history(self, b_hat_history):
+        """
+        This function does a complicated reshape and re-indexing operation to get the
+        list of dataframes for the b_hat_history into a multi-indexed dataframe.  This
+        dataframe is easier to work with in plotting utilities and other downstream
+        analyses than the list of dataframes b_hat_history.
+        :param b_hat_history (list: list of dataframes of bhat at every iteration
+        :return: multi-index dataframe with outer index as iteration, inner index as cluster
+        """
+        # Step 1 - vertical stack all the arrays at each iteration into a single numpy array
+        b_array = np.vstack(b_hat_history)
+
+        # Step 2 - Create the multi-index. Note the outer index is iteration. The inner index is cluster.
+        iterations = range(len(b_hat_history))
+        clusters = b_hat_history[0].index
+        mi = pd.MultiIndex.from_product([iterations, clusters], names=("iteration", "cluster"))
+
+        # Step 3 - Create the multi-indexed dataframe
+        b_hat_history_df = pd.DataFrame(b_array, index=mi)
+        return b_hat_history_df
