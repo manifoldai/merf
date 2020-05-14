@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# orbyter_demo documentation build configuration file, created by
+# merf documentation build configuration file, created by
 # sphinx-quickstart.
 #
 # This file is execfile()d with the current directory set to its containing dir.

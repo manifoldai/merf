@@ -13,6 +13,15 @@ logger = logging.getLogger(__name__)
 
 
 class MERFDataGenerator(object):
+    """
+    Synthetic data generator class. 
+
+    Args: 
+        m (float): hi
+        sigma_b (float): hi
+        sigma_e (float): hi
+    """
+
     def __init__(self, m, sigma_b, sigma_e):
         self.m = m
         self.sigma_b = sigma_b
@@ -26,9 +35,13 @@ class MERFDataGenerator(object):
         """
         Helper function to one hot encode cluster ids based on training cluster ids. Note that for the "new" clusters
         this should encode to a matrix of all zeros.
-        :param clusters:
-        :param training_cluster_ids:
-        :return:
+
+        Args:
+            clusters: array of clusters
+            training_cluster_ids: ?
+        
+        Returns:
+            pd.Series: one hot encoded clusters
         """
         clusters_prime = pd.Categorical(clusters, categories=training_cluster_ids)
         X_ohe = pd.get_dummies(clusters_prime, prefix="cluster")
