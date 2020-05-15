@@ -1,5 +1,0 @@
-############## DO NOT PUT SECRETS IN THIS TEMPLATE FILE ##############
-# Put them in the .env file that will be created from this file.
-# These are environment variables that will be read by dockers containers. 
-# Do not use quotes.
-
