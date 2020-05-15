@@ -58,6 +58,7 @@ class MERF(object):
         self.sigma2_hat_history = []
         self.D_hat_history = []
         self.gll_history = []
+        self.val_loss_history = []
 
     def predict(self, X: np.ndarray, Z: np.ndarray, clusters: pd.Series):
         """
@@ -102,7 +103,17 @@ class MERF(object):
 
         return y_hat
 
-    def fit(self, X: np.ndarray, Z: np.ndarray, clusters: pd.Series, y: np.ndarray):
+    def fit(
+        self,
+        X: np.ndarray,
+        Z: np.ndarray,
+        clusters: pd.Series,
+        y: np.ndarray,
+        X_val: np.ndarray = None,
+        Z_val: np.ndarray = None,
+        clusters_val: pd.Series = None,
+        y_val: np.ndarray = None,
+    ):
         """
         Fit MERF using Expectation-Maximization algorithm.
 
@@ -115,13 +126,23 @@ class MERF(object):
         Returns:
             MERF: fitted model
         """
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Input Checks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if type(clusters) != pd.Series:
             raise TypeError("clusters must be a pandas Series.")
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Input Checks ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         assert len(Z) == len(X)
         assert len(y) == len(X)
         assert len(clusters) == len(X)
+
+        if X_val is None:
+            assert Z_val is None
+            assert clusters_val is None
+            assert y_val is None
+        else:
+            assert len(Z_val) == len(X_val)
+            assert len(clusters_val) == len(X_val)
+            assert len(y_val) == len(X_val)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Initialization ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         n_clusters = clusters.nunique()
@@ -130,7 +151,7 @@ class MERF(object):
         Z = np.array(Z)  # cast Z to numpy array (required if it's a dataframe, otw, the matrix mults later fail)
 
         # Create a series where cluster_id is the index and n_i is the value
-        cluster_counts = clusters.value_counts()
+        self.cluster_counts = clusters.value_counts()
 
         # Do expensive slicing operations only once
         Z_by_cluster = {}
@@ -140,7 +161,7 @@ class MERF(object):
         indices_by_cluster = {}
 
         # TODO: Can these be replaced with groupbys? Groupbys are less understandable than brute force.
-        for cluster_id in cluster_counts.index:
+        for cluster_id in self.cluster_counts.index:
             # Find the index for all the samples from this cluster in the large vector
             indices_i = clusters == cluster_id
             indices_by_cluster[cluster_id] = indices_i
@@ -150,15 +171,15 @@ class MERF(object):
             y_by_cluster[cluster_id] = y[indices_i]
 
             # Get the counts for each cluster and create the appropriately sized identity matrix for later computations
-            n_by_cluster[cluster_id] = cluster_counts[cluster_id]
-            I_by_cluster[cluster_id] = np.eye(cluster_counts[cluster_id])
+            n_by_cluster[cluster_id] = self.cluster_counts[cluster_id]
+            I_by_cluster[cluster_id] = np.eye(self.cluster_counts[cluster_id])
 
         # Intialize for EM algorithm
         iteration = 0
         # Note we are using a dataframe to hold the b_hat because this is easier to index into by cluster_id
         # Before we were using a simple numpy array -- but we were indexing into that wrong because the cluster_ids
         # are not necessarily in order.
-        b_hat_df = pd.DataFrame(np.zeros((n_clusters, q)), index=cluster_counts.index)
+        b_hat_df = pd.DataFrame(np.zeros((n_clusters, q)), index=self.cluster_counts.index)
         sigma2_hat = 1
         D_hat = np.eye(q)
 
@@ -178,7 +199,7 @@ class MERF(object):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ E-step ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # fill up y_star for all clusters
             y_star = np.zeros(len(y))
-            for cluster_id in cluster_counts.index:
+            for cluster_id in self.cluster_counts.index:
                 # Get cached cluster slices
                 y_i = y_by_cluster[cluster_id]
                 Z_i = Z_by_cluster[cluster_id]
@@ -202,7 +223,7 @@ class MERF(object):
             sigma2_hat_sum = 0
             D_hat_sum = 0
 
-            for cluster_id in cluster_counts.index:
+            for cluster_id in self.cluster_counts.index:
                 # Get cached cluster slices
                 indices_i = indices_by_cluster[cluster_id]
                 y_i = y_by_cluster[cluster_id]
@@ -258,7 +279,7 @@ class MERF(object):
 
             # Generalized Log Likelihood computation to check convergence
             gll = 0
-            for cluster_id in cluster_counts.index:
+            for cluster_id in self.cluster_counts.index:
                 # Get cached cluster slices
                 indices_i = indices_by_cluster[cluster_id]
                 y_i = y_by_cluster[cluster_id]
@@ -283,8 +304,12 @@ class MERF(object):
                     + logdet_R_hat_i
                 )  # noqa: E127
 
-            logger.info("GLL is {} at iteration {}.".format(gll, iteration))
+            logger.info("Training GLL is {} at iteration {}.".format(gll, iteration))
             self.gll_history.append(gll)
+
+            # Save off the most updated fixed effects model and random effects coefficents
+            self.trained_fe_model = self.fe_model
+            self.trained_b = b_hat_df
 
             # Early Stopping. This code is entered only if the early stop threshold is specified and
             # if the gll_history array is longer than 1 element, e.g. we are past the first iteration.
@@ -296,18 +321,19 @@ class MERF(object):
                     logger.info("Gll {} less than threshold {}, stopping early ...".format(gll, curr_threshold))
                     early_stop_flag = True
 
-        # Store off trained fixed effects model and b_hat as the model to be used in the prediction stage
-        self.cluster_counts = cluster_counts
-        self.trained_fe_model = self.fe_model
-        self.trained_b = b_hat_df
-        self.b_hat_history_df = self._convert_bhat_history(self.b_hat_history)
+            # Compute Validation Loss
+            if X_val is not None:
+                yhat_val = self.predict(X_val, Z_val, clusters_val)
+                val_loss = np.square(np.subtract(y_val, yhat_val)).mean()
+                logger.info(f"Validation MSE Loss is {val_loss} at iteration {iteration}.")
+                self.val_loss_history.append(val_loss)
 
         return self
 
     def score(self, X, Z, clusters, y):
         raise NotImplementedError()
 
-    def _convert_bhat_history(self, b_hat_history):
+    def get_bhat_history_df(self):
         """
         This function does a complicated reshape and re-indexing operation to get the
         list of dataframes for the b_hat_history into a multi-indexed dataframe.  This
@@ -321,11 +347,11 @@ class MERF(object):
             pd.DataFrame: multi-index dataframe with outer index as iteration, inner index as cluster
         """
         # Step 1 - vertical stack all the arrays at each iteration into a single numpy array
-        b_array = np.vstack(b_hat_history)
+        b_array = np.vstack(self.b_hat_history)
 
         # Step 2 - Create the multi-index. Note the outer index is iteration. The inner index is cluster.
-        iterations = range(len(b_hat_history))
-        clusters = b_hat_history[0].index
+        iterations = range(len(self.b_hat_history))
+        clusters = self.b_hat_history[0].index
         mi = pd.MultiIndex.from_product([iterations, clusters], names=("iteration", "cluster"))
 
         # Step 3 - Create the multi-indexed dataframe

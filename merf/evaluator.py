@@ -53,16 +53,23 @@ def plot_training_stats(model, num_clusters_to_plot=5):
 
     # Plot bi across iterations
     ax = fig.add_subplot(gs[1, 1])
+    b_hat_history_df = model.get_bhat_history_df()
     for cluster_id in model.cluster_counts.index[0:num_clusters_to_plot]:
-        ax.plot(model.b_hat_history_df.xs(cluster_id, level="cluster"), label=cluster_id)
+        ax.plot(b_hat_history_df.xs(cluster_id, level="cluster"), label=cluster_id)
     ax.grid("on")
     ax.set_ylabel("b_hat")
     ax.set_xlabel("Iteration")
 
     # Plot bi distributions
-    ax = fig.add_subplot(gs[2, :])
+    ax = fig.add_subplot(gs[2, 0])
     model.trained_b.hist(bins=15, ax=ax)
     ax.set_xlabel("b_i")
     ax.set_title("Distribution of b_is")
 
-    return fig
+    # Plot validation loss
+    ax = fig.add_subplot(gs[2, 1])
+    if len(model.val_loss_history) > 0:
+        ax.plot(model.val_loss_history)
+    ax.grid("on")
+    ax.set_xlabel("Iteration")
+    ax.set_title("Validation MSE Loss")
