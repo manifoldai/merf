@@ -1,9 +1,9 @@
 .PHONY: help, ci-black, ci-flake8, ci-test, isort, black, sphinx
 
-IMAGE=merf
+PROJECT=merf
+CONTAINER_NAME="merf_jupyter_${USER}"  ## Ensure this is the same name as in docker-compose.yml file
 VERSION_FILE:=VERSION
 TAG:=$(shell cat ${VERSION_FILE})
-CONTAINER_NAME="merf_jupyter_${USER}"
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -38,7 +38,7 @@ lint: isort black ## Lint repo; runs black and isort on all files
 
 dev-start: ## Primary make command for devs, spins up containers
 	@echo "Building new images from compose"
-	docker-compose -f docker/docker-compose.yml --project-name merf up -d --build
+	docker-compose -f docker/docker-compose.yml --project-name $(PROJECT) up -d --build
 
 dev-stop: ## Spins down active containers
 	docker kill $(CONTAINER_NAME)
