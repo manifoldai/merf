@@ -12,6 +12,3 @@ services:
     stdin_open: true
     container_name: "merf_jupyter_${USER}"
     tty: true
-    env_file:
-      - ../.env 
-

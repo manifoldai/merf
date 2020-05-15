@@ -5,10 +5,13 @@ def readme():
     with open("README.md") as f:
         return f.read()
 
+def read_version(filename='VERSION'):
+    with open(filename, 'r') as f:
+        return f.readline()
 
 setup(
     name="merf",
-    version="0.3",
+    version=read_version(),
     description="Mixed Effects Random Forest",
     long_description=readme(),
     long_description_content_type="text/markdown",
