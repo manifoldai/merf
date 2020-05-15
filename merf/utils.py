@@ -11,7 +11,21 @@ logger = logging.getLogger(__name__)
 
 class MERFDataGenerator(object):
     """
-    Synthetic data generator class.
+    Synthetic data generator class. It simulates samples y from K clusters according to the following equation.
+
+    .. math::
+
+        y_{ij} = m \cdot g(x_{ij}) + b_i + \epsilon_{ij}
+
+        g(x_{ij}) = 2 x_{1ij} + x_{2ij}^2 + 4(x_{3ij} > 0) + 2 \log |x_{1ij}|x_{3ij}
+
+        b_i \sim N(0, \sigma_b^2)
+
+        \epsilon_{ij} \sim N(0, \sigma_\epsilon^2)
+
+        i = 1, ..., K
+
+        j = 1, ..., n_i
 
     Args:
         m (float): scale parameter on fixed effect

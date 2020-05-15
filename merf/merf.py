@@ -18,6 +18,21 @@ class MERF(object):
     Note that the user must pass in an already instantiated fixed_effects_model that adheres to the
     sklearn regression estimator API, i.e. must have a fit() and predict() method defined.
 
+    It assumes a data model of the form:
+
+    .. math::
+
+        y = f(X) + b_i Z + e
+
+    * y is the target variable. The current code only supports regression for now, e.g. continuously varying scalar value
+    * X is the fixed effect features. Assume p dimensional
+    * f(.) is the nonlinear fixed effects mode, e.g. random forest
+    * Z is the random effect features. Assume q dimensional.
+    * e is iid noise ~N(0, sigma_e²)
+    * i is the cluster index. Assume k clusters in the training.
+    * bi is the random effect coefficients. They are different per cluster i but are assumed to be drawn from the same distribution ~N(0, Sigma_b) where Sigma_b is learned from the data.
+
+
     Args:
         fixed_effects_model (sklearn.base.RegressorMixin): instantiated model class
         gll_early_stop_threshold (float): early stopping threshold on GLL improvement
