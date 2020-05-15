@@ -1,7 +1,7 @@
 """
 Mixed Effects Random Forest
 
-:copyright: 2017 Manifold, Inc.
+:copyright: 2020 Manifold, Inc.
 :author: Sourav Dey <sdey@manifold.ai>
 """
 import logging
@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 class MERF(object):
     """
-    This is the core class to instantiate, train, and predict using a mixed effects random forest model. 
-    It roughly adheres to the sklearn estimator API. 
-    Note that the user must pass in an already instantiated fixed_effects_model that adheres to the 
-    sklearn regression estimator API, i.e. must have a fit() and predict() method defined. 
+    This is the core class to instantiate, train, and predict using a mixed effects random forest model.
+    It roughly adheres to the sklearn estimator API.
+    Note that the user must pass in an already instantiated fixed_effects_model that adheres to the
+    sklearn regression estimator API, i.e. must have a fit() and predict() method defined.
 
-    Args: 
+    Args:
         fixed_effects_model (sklearn.base.RegressorMixin): instantiated model class
         gll_early_stop_threshold (float): early stopping threshold on GLL improvement
         max_iterations (int): maximum number of EM iterations to train
@@ -49,8 +49,8 @@ class MERF(object):
 
     def predict(self, X: np.ndarray, Z: np.ndarray, clusters: pd.Series):
         """
-        Predict using trained MERF.  For known clusters the trained random effect correction is applied. For unknown
-        clusters the pure fixed effect (RF) estimate is used.
+        Predict using trained MERF.  For known clusters the trained random effect correction is applied.
+        For unknown clusters the pure fixed effect (RF) estimate is used.
 
         Args:
             X (np.ndarray): fixed effect covariates
@@ -304,7 +304,7 @@ class MERF(object):
 
         Args:
             b_hat_history (list): list of dataframes of bhat at every iteration
-        
+
         Returns:
             pd.DataFrame: multi-index dataframe with outer index as iteration, inner index as cluster
         """

@@ -1,7 +1,7 @@
 """
 Mixed Effects Random Forest Evaluator
 
-:copyright: 2018 Manifold, Inc.
+:copyright: 2020 Manifold, Inc.
 :author: Sourav Dey <sdey@manifold.ai>
 """
 import matplotlib.gridspec as gridspec
@@ -12,17 +12,18 @@ import numpy as np
 def plot_training_stats(model, num_clusters_to_plot=5):
     """
     Plot training statistics for MERF model. This generates a plot that is rendered to the screen
-    that has five components: 
-        * Generalized log-likelihood across iterations
-        * trace and determinant of Sigma_b across iterations
-        * sigma_e across iterations
-        * bi for num_clusters_to_plot across iterations
-        * a histogram of the final learned bi
-    
-    Args: 
+    that has five components:
+
+    * Generalized log-likelihood across iterations
+    * trace and determinant of Sigma_b across iterations
+    * sigma_e across iterations
+    * bi for num_clusters_to_plot across iterations
+    * a histogram of the final learned bi
+
+    Args:
         model (MERF): trained MERF model
         num_clusters_to_plot (int): number of example bi's to plot across iterations
-    
+
     Returns:
         (matplotlib.pyplot.fig): figure. Also draws to display.
     """
