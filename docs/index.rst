@@ -1,20 +1,17 @@
-merf documentation
-==============================================
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-merf.merf
+merf
 ===================================================
 .. automodule:: merf.merf
     :members:
     
-merf.evaluator
+evaluator
 ===================================================
 .. automodule:: merf.evaluator
     :members:
 
-merf.utils
+utils
 ===================================================
 .. automodule:: merf.utils
     :members:

@@ -1,8 +1,5 @@
 """
-Mixed Effects Random Forest Evaluator
-
-:copyright: 2020 Manifold, Inc.
-:author: Sourav Dey <sdey@manifold.ai>
+Mixed Effects Random Forest plotting utlities.
 """
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt

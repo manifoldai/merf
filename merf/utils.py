@@ -1,8 +1,5 @@
 """
-Synthetic data generator.
-
-:copyright: 2020 Manifold, Inc.
-:author: Sourav Dey <sdey@manifold.ai>
+Synthetic mixed-effects data generator.
 """
 import logging
 

@@ -1,8 +1,5 @@
 """
-Mixed Effects Random Forest
-
-:copyright: 2020 Manifold, Inc.
-:author: Sourav Dey <sdey@manifold.ai>
+Mixed Effects Random Forest model.
 """
 import logging
 
