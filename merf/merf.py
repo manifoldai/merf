@@ -1,8 +1,5 @@
 """
-Mixed Effects Random Forest
-
-:copyright: 2017 Manifold, Inc.
-:author: Sourav Dey <sdey@manifold.ai>
+Mixed Effects Random Forest model.
 """
 import logging
 
@@ -15,19 +12,39 @@ logger = logging.getLogger(__name__)
 
 
 class MERF(object):
+    """
+    This is the core class to instantiate, train, and predict using a mixed effects random forest model.
+    It roughly adheres to the sklearn estimator API.
+    Note that the user must pass in an already instantiated fixed_effects_model that adheres to the
+    sklearn regression estimator API, i.e. must have a fit() and predict() method defined.
+
+    It assumes a data model of the form:
+
+    .. math::
+
+        y = f(X) + b_i Z + e
+
+    * y is the target variable. The current code only supports regression for now, e.g. continuously varying scalar value
+    * X is the fixed effect features. Assume p dimensional
+    * f(.) is the nonlinear fixed effects mode, e.g. random forest
+    * Z is the random effect features. Assume q dimensional.
+    * e is iid noise ~N(0, sigma_e²)
+    * i is the cluster index. Assume k clusters in the training.
+    * bi is the random effect coefficients. They are different per cluster i but are assumed to be drawn from the same distribution ~N(0, Sigma_b) where Sigma_b is learned from the data.
+
+
+    Args:
+        fixed_effects_model (sklearn.base.RegressorMixin): instantiated model class
+        gll_early_stop_threshold (float): early stopping threshold on GLL improvement
+        max_iterations (int): maximum number of EM iterations to train
+    """
+
     def __init__(
         self,
         fixed_effects_model=RandomForestRegressor(n_estimators=300, n_jobs=-1),
         gll_early_stop_threshold=None,
         max_iterations=20,
     ):
-        """
-        MERF constructor. Note that the user must pass in an already instantiated fixed_effects_model that
-        adheres to the sklearn regression estimator API, i.e. must have a fit() and predict() method defined.
-        : param fixed_effects_model (sklearn.base.RegressorMixin): instantiated model class
-        : gll_early_stop_threshold (float): early stopping threshold on GLL improvement
-        : max_iterations (int): maximum number of EM iterations to train
-        """
         self.gll_early_stop_threshold = gll_early_stop_threshold
         self.max_iterations = max_iterations
 
@@ -44,12 +61,16 @@ class MERF(object):
 
     def predict(self, X: np.ndarray, Z: np.ndarray, clusters: pd.Series):
         """
-        Predict using trained MERF.  For known clusters the trained random effect correction is applied. For unknown
-        clusters the pure fixed effect (RF) estimate is used.
-        :param X (np.ndarray): fixed effect covariates
-        :param Z (np.ndarray): random effect covariates
-        :param clusters (pd.Series): cluster assignments for samples
-        :return: y_hat, i.e. predictions
+        Predict using trained MERF.  For known clusters the trained random effect correction is applied.
+        For unknown clusters the pure fixed effect (RF) estimate is used.
+
+        Args:
+            X (np.ndarray): fixed effect covariates
+            Z (np.ndarray): random effect covariates
+            clusters (pd.Series): cluster assignments for samples
+
+        Returns:
+            np.ndarray: the predictions y_hat
         """
         if type(clusters) != pd.Series:
             raise TypeError("clusters must be a pandas Series.")
@@ -83,12 +104,16 @@ class MERF(object):
 
     def fit(self, X: np.ndarray, Z: np.ndarray, clusters: pd.Series, y: np.ndarray):
         """
-        Fit MERF using EM algorithm.
-        :param X (np.ndarray): fixed effect covariates
-        :param Z (np.ndarray): random effect covariates
-        :param clusters (pd.Series): cluster assignments for samples
-        :param y (np.ndarray): response/target variable
-        :return: fitted model
+        Fit MERF using Expectation-Maximization algorithm.
+
+        Args:
+            X (np.ndarray): fixed effect covariates
+            Z (np.ndarray): random effect covariates
+            clusters (pd.Series): cluster assignments for samples
+            y (np.ndarray): response/target variable
+
+        Returns:
+            MERF: fitted model
         """
         if type(clusters) != pd.Series:
             raise TypeError("clusters must be a pandas Series.")
@@ -288,8 +313,12 @@ class MERF(object):
         list of dataframes for the b_hat_history into a multi-indexed dataframe.  This
         dataframe is easier to work with in plotting utilities and other downstream
         analyses than the list of dataframes b_hat_history.
-        :param b_hat_history (list: list of dataframes of bhat at every iteration
-        :return: multi-index dataframe with outer index as iteration, inner index as cluster
+
+        Args:
+            b_hat_history (list): list of dataframes of bhat at every iteration
+
+        Returns:
+            pd.DataFrame: multi-index dataframe with outer index as iteration, inner index as cluster
         """
         # Step 1 - vertical stack all the arrays at each iteration into a single numpy array
         b_array = np.vstack(b_hat_history)

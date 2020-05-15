@@ -1,8 +1,5 @@
 """
-Data Generating Process
-
-:copyright: 2017 Manifold, Inc.
-:author: Sourav Dey <sdey@manifold.ai>
+Synthetic mixed-effects data generator.
 """
 import logging
 
@@ -13,6 +10,29 @@ logger = logging.getLogger(__name__)
 
 
 class MERFDataGenerator(object):
+    """
+    Synthetic data generator class. It simulates samples y from K clusters according to the following equation.
+
+    .. math::
+
+        y_{ij} = m \cdot g(x_{ij}) + b_i + \epsilon_{ij}
+
+        g(x_{ij}) = 2 x_{1ij} + x_{2ij}^2 + 4(x_{3ij} > 0) + 2 \log |x_{1ij}|x_{3ij}
+
+        b_i \sim N(0, \sigma_b^2)
+
+        \epsilon_{ij} \sim N(0, \sigma_\epsilon^2)
+
+        i = 1, ..., K
+
+        j = 1, ..., n_i
+
+    Args:
+        m (float): scale parameter on fixed effect
+        sigma_b (float): hyper parameter of random intercept
+        sigma_e (float): noise std
+    """
+
     def __init__(self, m, sigma_b, sigma_e):
         self.m = m
         self.sigma_b = sigma_b
@@ -26,9 +46,13 @@ class MERFDataGenerator(object):
         """
         Helper function to one hot encode cluster ids based on training cluster ids. Note that for the "new" clusters
         this should encode to a matrix of all zeros.
-        :param clusters:
-        :param training_cluster_ids:
-        :return:
+
+        Args:
+            clusters (np.ndarray): array of cluster labels for data
+            training_cluster_ids: array of clusters in training data
+
+        Returns:
+            pd.DataFrame: one hot encoded clusters
         """
         clusters_prime = pd.Categorical(clusters, categories=training_cluster_ids)
         X_ohe = pd.get_dummies(clusters_prime, prefix="cluster")
@@ -38,10 +62,14 @@ class MERFDataGenerator(object):
     def create_X_with_ohe_clusters(X, clusters, training_cluster_ids):
         """
         Helper function to join one hot encoded cluster ids with the feature matrix X.
-        :param X:
-        :param clusters:
-        :param training_cluster_ids:
-        :return:
+
+        Args:
+            X (np.ndarray): fixed effects feature matrix
+            clusters (np.ndarray): array of cluster labels for data in X
+            training_cluster_ids: array of clusters in training data
+
+        Returns:
+            pd.DataFrame: X augmented with one hot encoded clusters
         """
         X_ohe = MERFDataGenerator.ohe_clusters(clusters, training_cluster_ids)
         X_w_ohe = pd.merge(X, X_ohe, left_index=True, right_index=True)
@@ -50,10 +78,14 @@ class MERFDataGenerator(object):
     @staticmethod
     def create_cluster_sizes_array(sizes, num_clusters_per_size):
         """
-        Helper function.
-        :param cluster_sizes:
-        :param num_clusters_per_size:
-        :return:
+        Helper function to create an array of cluster sizes.
+
+        Args:
+            sizes (np.ndarray): array of sizes
+            num_clusters_per_size (np.ndarray): array of the number of clusters to make of each size
+
+        Returns:
+            np.ndarray: array of cluster sizes for all clusters
         """
         cluster_sizes = []
         for size in sizes:
@@ -63,7 +95,20 @@ class MERFDataGenerator(object):
     def generate_split_samples(self, n_training_per_cluster, n_test_known_per_cluster, n_test_new_per_cluster):
         """
         Generate samples split into training and two test sets.
-        :return:
+
+        Args:
+            n_training_per_cluster:
+            n_test_known_per_cluster:
+            n_test_new_per_cluster:
+
+        Returns:
+            tuple:
+                * training_data
+                * known_cluster_test_data
+                * new_cluster_test_data
+                * training_cluster_ids
+                * ptev
+                * prev
         """
         assert len(n_training_per_cluster) == len(n_test_known_per_cluster)
 
@@ -104,12 +149,17 @@ class MERFDataGenerator(object):
     def generate_samples(self, n_samples_per_cluster):
         """
         Generate test data for the MERF algorithm.
-        :param n_samples_per_cluster: array of number representing number of samples to choose from that cluster
-        :param m: scale parameter on fixed effect
-        :param sigma_b: hyper parameter of random intercept
-        :param sigma_e: noise std
-        :return: y (response), X (fixed effect features), Z (cluster assignment),
-        ptev (proportion of total effect variability), prev (proportion of random effect variability)
+
+        Args:
+            n_samples_per_cluster: array of number representing number of samples to choose from that cluster
+
+        Returns:
+            tuple:
+                * y (response)
+                * X (fixed effect features)
+                * Z (cluster assignment)
+                * ptev (proportion of total effect variability)
+                * prev (proportion of random effect variability)
         """
 
         # ~~~~~~~~~ Fixed Effect Generation ~~~~~~~~~~ #
