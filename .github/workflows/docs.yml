@@ -21,5 +21,5 @@ jobs:
         pip install -r docker/requirements.txt
     - name: Build and Deploy Docs
       run: |
-        make docs
+        make --always-make docs
         cp -a docsrc/_build/html/. docs
