@@ -44,4 +44,4 @@ dev-stop: ## Spins down active containers
 	docker kill $(CONTAINER_NAME)
 
 sphinx: ## Creates docs
-	docker exec -e GRANT_SUDO=yes $(CONTAINER_NAME) bash -c "cd docs; make html"
+	docker exec -e GRANT_SUDO=yes $(CONTAINER_NAME) bash -c "cd docsrc; make html"
