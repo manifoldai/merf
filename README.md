@@ -2,8 +2,10 @@
 
 ![](https://github.com/manifoldai/merf/workflows/CI/badge.svg)
 
-This repository contains a pure Python implementation of a mixed effects random forest (MERF) algorithm. It can be used, out of the box, to fit a MERF model and predict with it.
-Read more about MERF in [this](https://towardsdatascience.com/mixed-effects-random-forests-6ecbb85cb177) blogpost. 
+This repository contains a pure Python implementation of a mixed effects random forest (MERF) algorithm. It can be used, out of the box, to fit a MERF model and predict with it.  
+
+* [Sphinx documentation](https://manifoldai.github.io/merf/)
+* [Blog post](https://towardsdatascience.com/mixed-effects-random-forests-6ecbb85cb177) 
 
 ## MERF Model
 
