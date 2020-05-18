@@ -45,3 +45,4 @@ dev-stop: ## Spins down active containers
 
 sphinx: ## Creates docs
 	docker exec -e GRANT_SUDO=yes $(CONTAINER_NAME) bash -c "cd docsrc; make html"
+	@cp -a docsrc/_build/html/. docs
