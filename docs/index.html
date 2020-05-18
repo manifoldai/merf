@@ -1,0 +1,366 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>merf &#8212; merf 0.4 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">merf 0.4 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="toctree-wrapper compound">
+</div>
+<div class="section" id="module-merf.merf">
+<span id="merf"></span><h1>merf<a class="headerlink" href="#module-merf.merf" title="Permalink to this headline">¶</a></h1>
+<p>Mixed Effects Random Forest model.</p>
+<dl class="class">
+<dt id="merf.merf.MERF">
+<em class="property">class </em><code class="descclassname">merf.merf.</code><code class="descname">MERF</code><span class="sig-paren">(</span><em>fixed_effects_model=RandomForestRegressor(bootstrap=True</em>, <em>ccp_alpha=0.0</em>, <em>criterion='mse'</em>, <em>max_depth=None</em>, <em>max_features='auto'</em>, <em>max_leaf_nodes=None</em>, <em>max_samples=None</em>, <em>min_impurity_decrease=0.0</em>, <em>min_impurity_split=None</em>, <em>min_samples_leaf=1</em>, <em>min_samples_split=2</em>, <em>min_weight_fraction_leaf=0.0</em>, <em>n_estimators=300</em>, <em>n_jobs=-1</em>, <em>oob_score=False</em>, <em>random_state=None</em>, <em>verbose=0</em>, <em>warm_start=False)</em>, <em>gll_early_stop_threshold=None</em>, <em>max_iterations=20</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.merf.MERF" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the core class to instantiate, train, and predict using a mixed effects random forest model.
+It roughly adheres to the sklearn estimator API.
+Note that the user must pass in an already instantiated fixed_effects_model that adheres to the
+sklearn regression estimator API, i.e. must have a fit() and predict() method defined.</p>
+<p>It assumes a data model of the form:</p>
+<div class="math notranslate nohighlight">
+\[y = f(X) + b_i Z + e\]</div>
+<ul class="simple">
+<li><p>y is the target variable. The current code only supports regression for now, e.g. continuously varying scalar value</p></li>
+<li><p>X is the fixed effect features. Assume p dimensional</p></li>
+<li><p>f(.) is the nonlinear fixed effects mode, e.g. random forest</p></li>
+<li><p>Z is the random effect features. Assume q dimensional.</p></li>
+<li><p>e is iid noise ~N(0, sigma_e²)</p></li>
+<li><p>i is the cluster index. Assume k clusters in the training.</p></li>
+<li><p>bi is the random effect coefficients. They are different per cluster i but are assumed to be drawn from the same distribution ~N(0, Sigma_b) where Sigma_b is learned from the data.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fixed_effects_model</strong> (<em>sklearn.base.RegressorMixin</em>) – instantiated model class</p></li>
+<li><p><strong>gll_early_stop_threshold</strong> (<em>float</em>) – early stopping threshold on GLL improvement</p></li>
+<li><p><strong>max_iterations</strong> (<em>int</em>) – maximum number of EM iterations to train</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="merf.merf.MERF.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>X: numpy.ndarray</em>, <em>Z: numpy.ndarray</em>, <em>clusters: pandas.core.series.Series</em>, <em>y: numpy.ndarray</em>, <em>X_val: numpy.ndarray = None</em>, <em>Z_val: numpy.ndarray = None</em>, <em>clusters_val: pandas.core.series.Series = None</em>, <em>y_val: numpy.ndarray = None</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.merf.MERF.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit MERF using Expectation-Maximization algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>np.ndarray</em>) – fixed effect covariates</p></li>
+<li><p><strong>Z</strong> (<em>np.ndarray</em>) – random effect covariates</p></li>
+<li><p><strong>clusters</strong> (<em>pd.Series</em>) – cluster assignments for samples</p></li>
+<li><p><strong>y</strong> (<em>np.ndarray</em>) – response/target variable</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>fitted model</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#merf.merf.MERF" title="merf.merf.MERF">MERF</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="merf.merf.MERF.get_bhat_history_df">
+<code class="descname">get_bhat_history_df</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#merf.merf.MERF.get_bhat_history_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function does a complicated reshape and re-indexing operation to get the
+list of dataframes for the b_hat_history into a multi-indexed dataframe.  This
+dataframe is easier to work with in plotting utilities and other downstream
+analyses than the list of dataframes b_hat_history.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>b_hat_history</strong> (<em>list</em>) – list of dataframes of bhat at every iteration</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>multi-index dataframe with outer index as iteration, inner index as cluster</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="merf.merf.MERF.predict">
+<code class="descname">predict</code><span class="sig-paren">(</span><em>X: numpy.ndarray</em>, <em>Z: numpy.ndarray</em>, <em>clusters: pandas.core.series.Series</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.merf.MERF.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict using trained MERF.  For known clusters the trained random effect correction is applied.
+For unknown clusters the pure fixed effect (RF) estimate is used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>np.ndarray</em>) – fixed effect covariates</p></li>
+<li><p><strong>Z</strong> (<em>np.ndarray</em>) – random effect covariates</p></li>
+<li><p><strong>clusters</strong> (<em>pd.Series</em>) – cluster assignments for samples</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the predictions y_hat</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-merf.evaluator">
+<span id="evaluator"></span><h1>evaluator<a class="headerlink" href="#module-merf.evaluator" title="Permalink to this headline">¶</a></h1>
+<p>Mixed Effects Random Forest plotting utlities.</p>
+<dl class="function">
+<dt id="merf.evaluator.plot_training_stats">
+<code class="descclassname">merf.evaluator.</code><code class="descname">plot_training_stats</code><span class="sig-paren">(</span><em>model</em>, <em>num_clusters_to_plot=5</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.evaluator.plot_training_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot training statistics for MERF model. This generates a plot that is rendered to the screen
+that has five components:</p>
+<ul class="simple">
+<li><p>Generalized log-likelihood across iterations</p></li>
+<li><p>trace and determinant of Sigma_b across iterations</p></li>
+<li><p>sigma_e across iterations</p></li>
+<li><p>bi for num_clusters_to_plot across iterations</p></li>
+<li><p>a histogram of the final learned bi</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="#merf.merf.MERF" title="merf.merf.MERF"><em>MERF</em></a>) – trained MERF model</p></li>
+<li><p><strong>num_clusters_to_plot</strong> (<em>int</em>) – number of example bi’s to plot across iterations</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>figure. Also draws to display.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(matplotlib.pyplot.fig)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-merf.utils">
+<span id="utils"></span><h1>utils<a class="headerlink" href="#module-merf.utils" title="Permalink to this headline">¶</a></h1>
+<p>Synthetic mixed-effects data generator.</p>
+<dl class="class">
+<dt id="merf.utils.MERFDataGenerator">
+<em class="property">class </em><code class="descclassname">merf.utils.</code><code class="descname">MERFDataGenerator</code><span class="sig-paren">(</span><em>m</em>, <em>sigma_b</em>, <em>sigma_e</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.utils.MERFDataGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synthetic data generator class. It simulates samples y from K clusters according to the following equation.</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}y_{ij} = m \cdot g(x_{ij}) + b_i + \epsilon_{ij}\\g(x_{ij}) = 2 x_{1ij} + x_{2ij}^2 + 4(x_{3ij} &gt; 0) + 2 \log |x_{1ij}|x_{3ij}\\b_i \sim N(0, \sigma_b^2)\\\epsilon_{ij} \sim N(0, \sigma_\epsilon^2)\\i = 1, ..., K\\j = 1, ..., n_i\end{aligned}\end{align} \]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>m</strong> (<em>float</em>) – scale parameter on fixed effect</p></li>
+<li><p><strong>sigma_b</strong> (<em>float</em>) – hyper parameter of random intercept</p></li>
+<li><p><strong>sigma_e</strong> (<em>float</em>) – noise std</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="staticmethod">
+<dt id="merf.utils.MERFDataGenerator.create_X_with_ohe_clusters">
+<em class="property">static </em><code class="descname">create_X_with_ohe_clusters</code><span class="sig-paren">(</span><em>X</em>, <em>clusters</em>, <em>training_cluster_ids</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.utils.MERFDataGenerator.create_X_with_ohe_clusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to join one hot encoded cluster ids with the feature matrix X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>np.ndarray</em>) – fixed effects feature matrix</p></li>
+<li><p><strong>clusters</strong> (<em>np.ndarray</em>) – array of cluster labels for data in X</p></li>
+<li><p><strong>training_cluster_ids</strong> – array of clusters in training data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>X augmented with one hot encoded clusters</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="merf.utils.MERFDataGenerator.create_cluster_sizes_array">
+<em class="property">static </em><code class="descname">create_cluster_sizes_array</code><span class="sig-paren">(</span><em>sizes</em>, <em>num_clusters_per_size</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.utils.MERFDataGenerator.create_cluster_sizes_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to create an array of cluster sizes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sizes</strong> (<em>np.ndarray</em>) – array of sizes</p></li>
+<li><p><strong>num_clusters_per_size</strong> (<em>np.ndarray</em>) – array of the number of clusters to make of each size</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>array of cluster sizes for all clusters</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="merf.utils.MERFDataGenerator.generate_samples">
+<code class="descname">generate_samples</code><span class="sig-paren">(</span><em>n_samples_per_cluster</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.utils.MERFDataGenerator.generate_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate test data for the MERF algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n_samples_per_cluster</strong> – array of number representing number of samples to choose from that cluster</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>y (response)</p></li>
+<li><p>X (fixed effect features)</p></li>
+<li><p>Z (cluster assignment)</p></li>
+<li><p>ptev (proportion of total effect variability)</p></li>
+<li><p>prev (proportion of random effect variability)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="merf.utils.MERFDataGenerator.generate_split_samples">
+<code class="descname">generate_split_samples</code><span class="sig-paren">(</span><em>n_training_per_cluster</em>, <em>n_test_known_per_cluster</em>, <em>n_test_new_per_cluster</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.utils.MERFDataGenerator.generate_split_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate samples split into training and two test sets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_training_per_cluster</strong> – </p></li>
+<li><p><strong>n_test_known_per_cluster</strong> – </p></li>
+<li><p><strong>n_test_new_per_cluster</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>training_data</p></li>
+<li><p>known_cluster_test_data</p></li>
+<li><p>new_cluster_test_data</p></li>
+<li><p>training_cluster_ids</p></li>
+<li><p>ptev</p></li>
+<li><p>prev</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="merf.utils.MERFDataGenerator.ohe_clusters">
+<em class="property">static </em><code class="descname">ohe_clusters</code><span class="sig-paren">(</span><em>clusters</em>, <em>training_cluster_ids</em><span class="sig-paren">)</span><a class="headerlink" href="#merf.utils.MERFDataGenerator.ohe_clusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to one hot encode cluster ids based on training cluster ids. Note that for the “new” clusters
+this should encode to a matrix of all zeros.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clusters</strong> (<em>np.ndarray</em>) – array of cluster labels for data</p></li>
+<li><p><strong>training_cluster_ids</strong> – array of clusters in training data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>one hot encoded clusters</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">merf</a></li>
+<li><a class="reference internal" href="#module-merf.evaluator">evaluator</a></li>
+<li><a class="reference internal" href="#module-merf.utils">utils</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">merf 0.4 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright .
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.0.1.
+    </div>
+  </body>
+</html>
