@@ -121,6 +121,7 @@ class MERFTest(unittest.TestCase):
         # Train
         m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
         self.assertEqual(len(m.gll_history), 5)
+        self.assertEqual(len(m.val_loss_history), 0)
         # Predict Known Clusters
         yhat_known = m.predict(self.X_known, self.Z_known, self.clusters_known)
         self.assertEqual(len(yhat_known), 5)
@@ -132,6 +133,7 @@ class MERFTest(unittest.TestCase):
         m = MERF(max_iterations=5)
         # Train
         m.fit(np.array(self.X_train), np.array(self.Z_train), self.clusters_train, self.y_train)
+        self.assertEqual(len(m.val_loss_history), 0)
         # Predict Known Clusters
         yhat_known = m.predict(np.array(self.X_known), np.array(self.Z_known), self.clusters_known)
         self.assertEqual(len(yhat_known), 5)
@@ -189,6 +191,49 @@ class MERFTest(unittest.TestCase):
         # Train
         m.fit(self.X_train, self.Z_train, self.clusters_train, self.y_train)
         self.assertEqual(len(m.gll_history), 5)
+        # Predict Known Clusters
+        yhat_known = m.predict(self.X_known, self.Z_known, self.clusters_known)
+        self.assertEqual(len(yhat_known), 5)
+        # Predict New Clusters
+        yhat_new = m.predict(self.X_new, self.Z_new, self.clusters_new)
+        self.assertEqual(len(yhat_new), 2)
+
+    def test_validation(self):
+        lgbm = LGBMRegressor()
+        m = MERF(fixed_effects_model=lgbm, max_iterations=5)
+        # Train
+        m.fit(
+            self.X_train,
+            self.Z_train,
+            self.clusters_train,
+            self.y_train,
+            self.X_known,
+            self.Z_known,
+            self.clusters_known,
+            self.y_known,
+        )
+        self.assertEqual(len(m.val_loss_history), 5)
+        # Predict Known Clusters
+        yhat_known = m.predict(self.X_known, self.Z_known, self.clusters_known)
+        self.assertEqual(len(yhat_known), 5)
+        # Predict New Clusters
+        yhat_new = m.predict(self.X_new, self.Z_new, self.clusters_new)
+        self.assertEqual(len(yhat_new), 2)
+
+    def test_validation_numpy(self):
+        m = MERF(max_iterations=3)
+        # Train
+        m.fit(
+            np.array(self.X_train),
+            np.array(self.Z_train),
+            self.clusters_train,
+            self.y_train,
+            np.array(self.X_new),
+            np.array(self.Z_new),
+            self.clusters_new,
+            self.y_new,
+        )
+        self.assertEqual(len(m.val_loss_history), 3)
         # Predict Known Clusters
         yhat_known = m.predict(self.X_known, self.Z_known, self.clusters_known)
         self.assertEqual(len(yhat_known), 5)
