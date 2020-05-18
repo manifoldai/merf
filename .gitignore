@@ -103,8 +103,11 @@ ENV/
 # idea
 .idea/
 
-#merf
+# merf
 merf/*.txt
 *.pkl
 data/mse_experiments.csv
 .pytest_cache
+
+# Mac droppings
+.DS_Store
