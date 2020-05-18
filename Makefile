@@ -22,7 +22,7 @@ ci-flake8: ## Test for flake8 requirements
 	docker exec $(CONTAINER_NAME) flake8 merf
 
 ci-test:  ## Test unittests
-	docker exec $(CONTAINER_NAME) python merf/merf_test.py -v
+	docker exec $(CONTAINER_NAME) pytest merf/merf_test.py
 
 ci: ci-black ci-flake8 ci-test ## Check black, flake8, and unittests
 	@echo "CI sucessful"

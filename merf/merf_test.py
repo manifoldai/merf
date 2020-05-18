@@ -16,8 +16,8 @@ from lightgbm import LGBMRegressor
 from numpy.testing import assert_almost_equal
 from sklearn.exceptions import NotFittedError
 
-from merf import MERF
-from utils import MERFDataGenerator
+from merf.merf import MERF
+from merf.utils import MERFDataGenerator
 
 
 class DataGenerationTest(unittest.TestCase):
