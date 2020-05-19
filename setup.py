@@ -28,7 +28,7 @@ setup(
     license="MIT",
     python_requires='>=3.6',
     packages=find_packages(),
-    install_requires=["pandas>=1.0", "numpy", "scikit-learn"],
+    install_requires=["pandas>=1.0", "numpy", "scikit-learn", "matplotlib>=3.0"],
     include_package_data=True,
     zip_safe=False,
 )
