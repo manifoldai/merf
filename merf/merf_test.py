@@ -18,6 +18,7 @@ from sklearn.exceptions import NotFittedError
 
 from merf import MERF
 from utils import MERFDataGenerator
+from viz import plot_merf_training_stats
 
 
 class DataGenerationTest(unittest.TestCase):
@@ -240,6 +241,22 @@ class MERFTest(unittest.TestCase):
         # Predict New Clusters
         yhat_new = m.predict(self.X_new, self.Z_new, self.clusters_new)
         self.assertEqual(len(yhat_new), 2)
+
+    def test_viz(self):
+        lgbm = LGBMRegressor()
+        m = MERF(fixed_effects_model=lgbm, max_iterations=5)
+        # Train
+        m.fit(
+            self.X_train,
+            self.Z_train,
+            self.clusters_train,
+            self.y_train,
+            self.X_known,
+            self.Z_known,
+            self.clusters_known,
+            self.y_known,
+        )
+        plot_merf_training_stats(m)
 
 
 if __name__ == "__main__":
