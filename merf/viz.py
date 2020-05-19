@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_training_stats(model, num_clusters_to_plot=5):
+def plot_merf_training_stats(model, num_clusters_to_plot=5):
     """
     Plot training statistics for MERF model. This generates a plot that is rendered to the screen
     that has five components:
