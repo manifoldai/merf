@@ -38,7 +38,9 @@ The algorithms implemented in this repo were developed by Ahlem Hajjem, Francois
 
 ## Using the Code
 
-The MERF code is modelled after scikit-learn estimators.  To use, you instantiate a MERF object (with or without specifying parameters -- the defaults are sensible). Then you fit the model using training data. After fitting you can predict responses from data, either from known (cluster in training set) or new (cluster not in training set) clusters.
+The MERF code is modelled after scikit-learn estimators.  To use, you instantiate a MERF object.  As of 1.0, you can pass any non-linear estimator for the fixed effect. By default this is a scikit-learn random forest, but you can pass any model you wish that conforms to the scikit-learn estimator API, e.g. LightGBM, XGBoost, a properly wrapped PyTorch neural net, 
+
+Then you fit the model using training data.  As of 1.0, you can also pass a validation set to see the validation performance on it.  This is meant to feel similar to PyTorch where you can view the validation loss after each epoch of training. After fitting you can predict responses from data, either from known (cluster in training set) or new (cluster not in training set) clusters.
 
 For example:
 
@@ -49,16 +51,25 @@ For example:
 > y_hat = merf.predict(X_test, Z_test, clusters_test)
 ```
 
-Note that training is slow because the underlying expectation-maximization (EM) algorithm requires many calls to the random forest fit method. That being said, this implemtataion has early stopping which aborts the EM algorithm if the generalized log-likelihood (GLL) stops significantly improving.
+Alternatively: 
 
-In its current implementation the fixed effects learner is a random fores, but in theory the EM algorithm can be used with any learner. Our hope is to have future releases that do the same with gradient boosted trees and even deep neural networks.
+```
+> from lightgbm import LGBMRegressor
+> lgbm = LGBMRegressor()
+> mrf_lgbm = MERF(lgbm, max_iterations=15)
+> mrf_lgbm.fit(X_train, Z_train, clusters_train, y_train, X_val, Z_val, clusters_val, y_val)
+> y_hat = merf.predict(X_test, Z_test, clusters_test)
+```
+
+Note that training is slow because the underlying expectation-maximization (EM) algorithm requires many calls to the non-linear fixed effects model, e.g. random forest. That being said, this implemtataion has early stopping which aborts the EM algorithm if the generalized log-likelihood (GLL) stops significantly improving.
 
 ## Tour of the Source Code
 
-The `\src` directory contains all the source code:
+The `\merf` directory contains all the source code:
 
 * `merf.py` is the key module that contains the MERF class. It is imported at the package level.
-* `tests.py` contain some simple unit tests.
+* `merf_test.py` contain some simple unit tests.
 * `utils.py` contains a class for generating synthetic data that can be used to test the accuracy of MERF.  The process implemented is the same as that in this [paper](http://www.tandfonline.com/doi/abs/10.1080/00949655.2012.741599).
+* `viz.py` contains a plotting function that takes in a trained MERF object and plots various metrics of interest. 
 
 The `\notebooks` directory contains some useful notebooks that show you how to use the code and evaluate MERF performance.  Most of the techniques implemented are the same as those in this [paper](http://www.tandfonline.com/doi/abs/10.1080/00949655.2012.741599).
