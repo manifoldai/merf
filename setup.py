@@ -27,7 +27,7 @@ setup(
     author_email="sdey@manifold.ai",
     license="MIT",
     packages=find_packages(),
-    install_requires=["pandas", "numpy", "scikit-learn"],
+    install_requires=["pandas", "numpy", "scikit-learn", "matplotlib"],
     include_package_data=True,
     zip_safe=False,
 )
