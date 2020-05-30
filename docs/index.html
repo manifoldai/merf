@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>merf &#8212; merf 1.0 documentation</title>
+    <title>MERF &#8212; merf 1.0 documentation</title>
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -37,7 +37,7 @@
   <div class="toctree-wrapper compound">
 </div>
 <div class="section" id="module-merf.merf">
-<span id="merf"></span><h1>merf<a class="headerlink" href="#module-merf.merf" title="Permalink to this headline">¶</a></h1>
+<span id="merf"></span><h1>MERF<a class="headerlink" href="#module-merf.merf" title="Permalink to this headline">¶</a></h1>
 <p>Mixed Effects Random Forest model.</p>
 <dl class="py class">
 <dt id="merf.merf.MERF">
@@ -134,11 +134,8 @@ For unknown clusters the pure fixed effect (RF) estimate is used.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="evaluator">
-<h1>evaluator<a class="headerlink" href="#evaluator" title="Permalink to this headline">¶</a></h1>
-</div>
 <div class="section" id="module-merf.utils">
-<span id="utils"></span><h1>utils<a class="headerlink" href="#module-merf.utils" title="Permalink to this headline">¶</a></h1>
+<span id="utilities"></span><h1>Utilities<a class="headerlink" href="#module-merf.utils" title="Permalink to this headline">¶</a></h1>
 <p>Synthetic mixed-effects data generator.</p>
 <dl class="py class">
 <dt id="merf.utils.MERFDataGenerator">
@@ -272,6 +269,35 @@ this should encode to a matrix of all zeros.</p>
 
 </dd></dl>
 
+<span class="target" id="module-merf.viz"></span><p>Mixed Effects Random Forest plotting utlities.</p>
+<dl class="py function">
+<dt id="merf.viz.plot_merf_training_stats">
+<code class="sig-prename descclassname">merf.viz.</code><code class="sig-name descname">plot_merf_training_stats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">num_clusters_to_plot</span><span class="o">=</span><span class="default_value">5</span></em><span class="sig-paren">)</span><a class="headerlink" href="#merf.viz.plot_merf_training_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot training statistics for MERF model. This generates a plot that is rendered to the screen
+that has five components:</p>
+<ul class="simple">
+<li><p>Generalized log-likelihood across iterations</p></li>
+<li><p>trace and determinant of Sigma_b across iterations</p></li>
+<li><p>sigma_e across iterations</p></li>
+<li><p>bi for num_clusters_to_plot across iterations</p></li>
+<li><p>a histogram of the final learned bi</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="#merf.merf.MERF" title="merf.merf.MERF"><em>MERF</em></a>) – trained MERF model</p></li>
+<li><p><strong>num_clusters_to_plot</strong> (<em>int</em>) – number of example bi’s to plot across iterations</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>figure. Also draws to display.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(matplotlib.pyplot.fig)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
@@ -290,9 +316,8 @@ this should encode to a matrix of all zeros.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="#">Table of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">merf</a></li>
-<li><a class="reference internal" href="#evaluator">evaluator</a></li>
-<li><a class="reference internal" href="#module-merf.utils">utils</a></li>
+<li><a class="reference internal" href="#">MERF</a></li>
+<li><a class="reference internal" href="#module-merf.utils">Utilities</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 

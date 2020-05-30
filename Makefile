@@ -1,4 +1,4 @@
-.PHONY: help, ci-black, ci-flake8, ci-test, isort, black, sphinx
+.PHONY: help, ci-black, ci-flake8, ci-test, isort, black, docs
 
 PROJECT=merf
 CONTAINER_NAME="merf_jupyter_${USER}"  ## Ensure this is the same name as in docker-compose.yml file

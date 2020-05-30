@@ -1,19 +1,17 @@
 .. toctree::
    :maxdepth: 3
 
-merf
+MERF
 ===================================================
 .. automodule:: merf.merf
     :members:
     
-evaluator
-===================================================
-.. automodule:: merf.evaluator
-    :members:
-
-utils
+Utilities
 ===================================================
 .. automodule:: merf.utils
+    :members:
+
+.. automodule:: merf.viz
     :members:
 
 Indices and tables
