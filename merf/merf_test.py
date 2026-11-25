@@ -15,6 +15,7 @@ import pandas as pd
 from lightgbm import LGBMRegressor
 from numpy.testing import assert_almost_equal
 from sklearn.exceptions import NotFittedError
+from sklearn.linear_model import LinearRegression
 
 from merf import MERF
 from utils import MERFDataGenerator
@@ -141,6 +142,26 @@ class MERFTest(unittest.TestCase):
         # Predict New Clusters
         yhat_new = m.predict(np.array(self.X_new), np.array(self.Z_new), self.clusters_new)
         self.assertEqual(len(yhat_new), 2)
+
+    def test_column_targets(self):
+        train = (self.X_train, self.Z_train, self.clusters_train)
+        validation = (self.X_known, self.Z_known, self.clusters_known)
+        expected = MERF(fixed_effects_model=LinearRegression(), max_iterations=2)
+        expected.fit(*train, self.y_train, *validation, self.y_known)
+        predictions = expected.predict(*validation)
+        expected_mse = np.mean((self.y_known.to_numpy() - predictions) ** 2)
+
+        # Move the cluster blocks without changing row labels or the order within each cluster.
+        grouped_index = self.clusters_train.sort_values(ascending=False, kind="mergesort").index
+        for target, val_target in (
+            (self.y_train.loc[grouped_index].to_frame(), self.y_known.to_frame()),
+            (self.y_train.to_numpy()[:, None], self.y_known.to_numpy()[:, None]),
+        ):
+            with self.subTest(target_type=type(target)):
+                model = MERF(fixed_effects_model=LinearRegression(), max_iterations=2)
+                model.fit(*train, target, *validation, val_target)
+                np.testing.assert_allclose(model.predict(*validation), predictions)
+                self.assertAlmostEqual(model.val_loss_history[-1], expected_mse)
 
     def test_type_error(self):
         m = MERF(max_iterations=5)
