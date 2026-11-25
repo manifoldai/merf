@@ -7,8 +7,18 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.exceptions import NotFittedError
+from sklearn.utils.validation import column_or_1d
 
 logger = logging.getLogger(__name__)
+
+
+def _target_vector(y):
+    if isinstance(y, pd.DataFrame):
+        y = y.squeeze(axis=1)
+    # Keep the index used by pandas cluster masks.
+    if isinstance(y, pd.Series):
+        return y
+    return column_or_1d(y)
 
 
 class MERF(object):
@@ -121,7 +131,7 @@ class MERF(object):
             X (np.ndarray): fixed effect covariates
             Z (np.ndarray): random effect covariates
             clusters (pd.Series): cluster assignments for samples
-            y (np.ndarray): response/target variable
+            y (array-like): response vector or single-column target
 
         Returns:
             MERF: fitted model
@@ -131,6 +141,7 @@ class MERF(object):
         if type(clusters) != pd.Series:
             raise TypeError("clusters must be a pandas Series.")
 
+        y = _target_vector(y)
         assert len(Z) == len(X)
         assert len(y) == len(X)
         assert len(clusters) == len(X)
@@ -140,6 +151,7 @@ class MERF(object):
             assert clusters_val is None
             assert y_val is None
         else:
+            y_val = _target_vector(y_val)
             assert len(Z_val) == len(X_val)
             assert len(clusters_val) == len(X_val)
             assert len(y_val) == len(X_val)
